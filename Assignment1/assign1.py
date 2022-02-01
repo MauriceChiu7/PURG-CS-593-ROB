@@ -19,6 +19,10 @@ import time
 def diff(v1, v2):
     """
     Computes the difference v1 - v2, assuming v1 and v2 are both vectors
+    v2 = [2, 5, 7]
+    v1 = [1, 2, 3]
+    list(zip(v1, v2)) -> [(1, 2), (2, 5), (3, 7)]
+    print([x for x in range(4)]) -> [0, 1, 2, 3]
     """
     return [x1 - x2 for x1, x2 in zip(v1, v2)]
 
@@ -47,6 +51,8 @@ class RRT():
         goal:Goal Position [x,y]
         obstacleList:obstacle Positions [[x,y,width,height],...]
         randArea:Ramdom Samping Area [min,max]
+        alg:Algorithm used
+        geom:Geometry
 
         """
         self.start = Node(start)
@@ -296,11 +302,11 @@ class RRT():
         s[1] = node.state[1]
 
 
-        for (ox, oy, sizex,sizey) in self.obstacleList:
-            obs=[ox+sizex/2.0,oy+sizey/2.0]
+        for (ox, oy, sizex,sizey) in self.obstacleList:         # goes tru all the obstacles. obs (x, y, width, height)
+            obs=[ox+sizex/2.0,oy+sizey/2.0]                     # gives obs' center point
             obs_size=[sizex,sizey]
-            cf = False
-            for j in range(self.dof):
+            cf = False                                          # cf stands for configuration; False: invalid config.
+            for j in range(self.dof):       # check x-axis, y-axis, ... and return True if any of them doesn't collide.
                 if abs(obs[j] - s[j])>obs_size[j]/2.0:
                     cf=True
                     break
@@ -340,28 +346,28 @@ class RRT():
             'key_release_event',
             lambda event: [exit(0) if event.key == 'escape' else None])
 
-        for (ox, oy, sizex, sizey) in self.obstacleList:
+        for (ox, oy, sizex, sizey) in self.obstacleList:    # draws the obstacles
             rect = mpatches.Rectangle((ox, oy), sizex, sizey, fill=True, color="purple", linewidth=0.1)
             plt.gca().add_patch(rect)
 
 
-        for node in self.nodeList:
+        for node in self.nodeList:                          # draws the tree
             if node.parent is not None:
                 if node.state is not None:
                     plt.plot([node.state[0], self.nodeList[node.parent].state[0]], [
                         node.state[1], self.nodeList[node.parent].state[1]], "-g")
 
-        if self.goalfound:
+        if self.goalfound:                                  # draws the shortest path
             path = self.get_path_to_goal()
             x = [p[0] for p in path]
             y = [p[1] for p in path]
             plt.plot(x, y, '-r')
 
-        if rnd is not None:
+        if rnd is not None:                                 # draws the current location of "rnd" as a triangle
             plt.plot(rnd[0], rnd[1], "^k")
 
-        plt.plot(self.start.state[0], self.start.state[1], "xr")
-        plt.plot(self.end.state[0], self.end.state[1], "xr")
+        plt.plot(self.start.state[0], self.start.state[1], "xr")    # draws start state
+        plt.plot(self.end.state[0], self.end.state[1], "xr")        # draws end state
         plt.axis("equal")
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
@@ -401,12 +407,12 @@ def main():
 
 
     obstacleList = [
-    (-15,0, 15.0, 5.0),
-    (15,-10, 5.0, 10.0),
-    (-10,8, 5.0, 15.0),
-    (3,15, 10.0, 5.0),
-    (-10,-10, 10.0, 5.0),
-    (5,-5, 5.0, 5.0),
+    (-15,   0,      15.0,   5.0),
+    (15,    -10,    5.0,    10.0),
+    (-10,   8,      5.0,    15.0),
+    (3,     15,     10.0,   5.0),
+    (-10,   -10,    10.0,   5.0),
+    (5,     -5,     5.0,    5.0),
     ]
 
     start = [-10, -17]
@@ -422,6 +428,7 @@ def main():
         print("FAILED to find a path in %.2fsec"%(endtime - starttime))
     else:
         print("SUCCESS - found path of cost %.5f in %.2fsec"%(RRT.get_path_len(path), endtime - starttime))
+    
     # Draw final path
     if not args.blind:
         rrt.draw_graph()
