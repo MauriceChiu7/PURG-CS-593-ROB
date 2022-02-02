@@ -297,9 +297,6 @@ class RRT():
         """
         # your code here start
 
-        # oldPathCost = float('inf')
-        # newParentInd = None
-
         for j in range(len(nearinds)):
             nearind = nearinds[j]
             (valid, cost) = self.steerTo(self.nodeList[nearind], newNode)
@@ -309,12 +306,9 @@ class RRT():
                 if newPathCost < oldPathCost:
                     self.nodeList[nearind].parent = newNodeIndex
                     self.nodeList[nearind].cost = newPathCost
-
-            # totalCost = self.nodeList[nearind].cost + )
-            # if totalCost < min:
-            #     min = totalCost
-            #     newParentInd = nearind
-            #     self.nodeList[newNodeIndex].parent = newParentInd
+                    delta = oldPathCost - newPathCost
+                    for descendantInd in self.nodeList[nearind].children:
+                        self.nodeList[descendantInd].cost -= delta
 
         # your code here end
         pass
@@ -474,6 +468,9 @@ def main():
 
     # for i in range(len(rrt.nodeList)):
     #     print(f"node: {i}, cost: {rrt.nodeList[i].cost}")
+
+    # print(rrt.nodeList[len(rrt.nodeList)-2].children)
+    # print(rrt.nodeList[0].children)
 
     if path is None:
         print("FAILED to find a path in %.2fsec"%(endtime - starttime))
