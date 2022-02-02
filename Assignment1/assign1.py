@@ -131,7 +131,14 @@ class RRT():
 
         Returns: index of the new parent selected
         """
-        # your code here
+        # your code here start
+        min = float('inf')
+        minind = None
+        for j in range(len(nearinds)):
+            if dist(newNode.state, self.nodeList[nearinds[j]].state) < min:
+                minind = nearinds[j]
+
+        # your code here end
         return None
 
     def steerTo(self, dest, source):
