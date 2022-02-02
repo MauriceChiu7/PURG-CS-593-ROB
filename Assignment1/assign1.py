@@ -137,10 +137,11 @@ class RRT():
         for j in range(len(nearinds)):
             (valid, cost) = self.steerTo(newNode, self.nodeList[nearinds[j]])
             # print(f"valid: {valid}, cost: {cost}")
-            
-            if valid and self.nodeList[nearinds[j]].cost + cost < min:
-                min = self.nodeList[nearinds[j]].cost + cost
-                minind = nearinds[j]
+            if valid: 
+                totalCost = self.nodeList[nearinds[j]].cost + cost
+                if totalCost < min:
+                    min = totalCost
+                    minind = nearinds[j]
 
         # your code here end
         return minind
@@ -405,8 +406,8 @@ class RRT():
         plt.axis("equal")
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
-        # plt.pause(0.01)
-        plt.pause(0.5)
+        plt.pause(0.01)
+        # plt.pause(0.5)
 
 
 
