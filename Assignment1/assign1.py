@@ -296,16 +296,26 @@ class RRT():
         nearinds: list of indices of nodes near newNode
         """
         # your code here start
-        # min = float('inf')
-        # newParentInd = None
-        # for j in range(len(nearinds)):
 
-        #     nearind = nearinds[j]
-        #     totalCost = self.nodeList[nearind].cost + dist(newNode.state, self.nodeList[nearind].state)
-        #     if totalCost < min:
-        #         min = totalCost
-        #         newParentInd = nearind
-        #         self.nodeList[newNodeIndex].parent = newParentInd
+        # oldPathCost = float('inf')
+        # newParentInd = None
+
+        for j in range(len(nearinds)):
+            nearind = nearinds[j]
+            (valid, cost) = self.steerTo(self.nodeList[nearind], newNode)
+            if valid:
+                newPathCost = self.nodeList[newNodeIndex].cost + cost
+                oldPathCost = self.nodeList[nearind].cost
+                if newPathCost < oldPathCost:
+                    self.nodeList[nearind].parent = newNodeIndex
+                    self.nodeList[nearind].cost = newPathCost
+
+            # totalCost = self.nodeList[nearind].cost + )
+            # if totalCost < min:
+            #     min = totalCost
+            #     newParentInd = nearind
+            #     self.nodeList[newNodeIndex].parent = newParentInd
+
         # your code here end
         pass
 
