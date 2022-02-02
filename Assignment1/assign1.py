@@ -137,8 +137,9 @@ class RRT():
         for j in range(len(nearinds)):
             (valid, cost) = self.steerTo(newNode, self.nodeList[nearinds[j]])
             # print(f"valid: {valid}, cost: {cost}")
-            if valid and cost < min:
-                min = cost
+            
+            if valid and self.nodeList[nearinds[j]].cost + cost < min:
+                min = self.nodeList[nearinds[j]].cost + cost
                 minind = nearinds[j]
 
         # your code here end
@@ -294,15 +295,16 @@ class RRT():
         nearinds: list of indices of nodes near newNode
         """
         # your code here start
-        min = float('inf')
-        newParentInd = None
-        for j in range(len(nearinds)):
-            nearind = nearinds[j]
-            totalCost = self.nodeList[nearind].cost + dist(newNode.state, self.nodeList[nearind].state)
-            if totalCost < min:
-                min = totalCost
-                newParentInd = nearind
-                self.nodeList[newNodeIndex].parent = newParentInd
+        # min = float('inf')
+        # newParentInd = None
+        # for j in range(len(nearinds)):
+
+        #     nearind = nearinds[j]
+        #     totalCost = self.nodeList[nearind].cost + dist(newNode.state, self.nodeList[nearind].state)
+        #     if totalCost < min:
+        #         min = totalCost
+        #         newParentInd = nearind
+        #         self.nodeList[newNodeIndex].parent = newParentInd
         # your code here end
         pass
 
@@ -403,8 +405,8 @@ class RRT():
         plt.axis("equal")
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
-        plt.pause(0.01)
-        # plt.pause(0.5)
+        # plt.pause(0.01)
+        plt.pause(0.5)
 
 
 
