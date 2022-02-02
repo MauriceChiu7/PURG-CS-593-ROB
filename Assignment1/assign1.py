@@ -7,6 +7,7 @@ author: Ahmed Qureshi, code adapted from AtsushiSakai(@Atsushi_twi)
 
 
 import argparse
+from ast import Pass
 import random
 import math
 import copy
@@ -259,8 +260,18 @@ class RRT():
         # Use this value of gamma
         GAMMA = 50
 
-        # your code here
-        return []
+        # your code here start
+        nearinds = []
+        n = self.dof
+        for index in range(len(self.nodeList)):
+            i = len(self.nodeList)
+            print(f"i: {i}, GAMMA*np.power(np.log(i)/i, 1/n): {GAMMA*np.power(np.log(i)/i, 1/n)}")
+            if dist(newNode.state, self.nodeList[index].state) <= GAMMA*np.power(np.log(i)/i, 1/n):
+                nearinds.append(index)
+
+        # print(nearinds)
+        # your code here end
+        return nearinds
 
     def rewire(self, newNode, newNodeIndex, nearinds):
         """
@@ -386,6 +397,8 @@ class Node():
         self.parent = None
         self.children = set()
 
+    # def __str__(self):
+    #     print(f"state: {self.state}, cost: {self.cost}, parent: {self.parent}, children: {self.children}")
 
 
 def main():
