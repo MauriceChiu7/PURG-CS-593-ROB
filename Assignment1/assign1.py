@@ -262,11 +262,12 @@ class RRT():
 
         # your code here start
         nearinds = []
+        i = len(self.nodeList)
         n = self.dof
-        for index in range(len(self.nodeList)):
-            i = len(self.nodeList)
-            print(f"i: {i}, GAMMA*np.power(np.log(i)/i, 1/n): {GAMMA*np.power(np.log(i)/i, 1/n)}")
-            if dist(newNode.state, self.nodeList[index].state) <= GAMMA*np.power(np.log(i)/i, 1/n):
+        ballRegion = GAMMA*np.power(np.log(i)/i, 1/n)
+        # print(f"i: {i}, GAMMA*np.power(np.log(i)/i, 1/n): {ballRegion}")
+        for index in range(i):
+            if dist(newNode.state, self.nodeList[index].state) <= ballRegion:
                 nearinds.append(index)
 
         # print(nearinds)
