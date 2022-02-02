@@ -135,11 +135,14 @@ class RRT():
         min = float('inf')
         minind = None
         for j in range(len(nearinds)):
-            if dist(newNode.state, self.nodeList[nearinds[j]].state) < min:
+            (valid, cost) = self.steerTo(newNode, self.nodeList[nearinds[j]])
+            # print(f"valid: {valid}, cost: {cost}")
+            if valid and cost < min:
+                min = cost
                 minind = nearinds[j]
 
         # your code here end
-        return None
+        return minind
 
     def steerTo(self, dest, source):
         """
@@ -290,7 +293,9 @@ class RRT():
         newNodeIndex: the index of newNode
         nearinds: list of indices of nodes near newNode
         """
-        # your code here
+        # your code here start
+
+        # your code here end
         pass
 
     def GetNearestListIndex(self, nodeList, rnd):
@@ -391,6 +396,7 @@ class RRT():
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
         plt.pause(0.01)
+        # plt.pause(0.5)
 
 
 
@@ -401,7 +407,7 @@ class Node():
 
     def __init__(self,state):
         self.state =state
-        self.cost = 0.0
+        self.cost = 0.0         # the cost here stores the total cost from the starting node up to this node.
         self.parent = None
         self.children = set()
 
@@ -444,6 +450,9 @@ def main():
     path = rrt.planning(animation=show_animation)
 
     endtime = time.time()
+
+    # for i in range(len(rrt.nodeList)):
+    #     print(f"node: {i}, cost: {rrt.nodeList[i].cost}")
 
     if path is None:
         print("FAILED to find a path in %.2fsec"%(endtime - starttime))
