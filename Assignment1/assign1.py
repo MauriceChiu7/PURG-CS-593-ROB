@@ -336,23 +336,27 @@ class RRT():
 
         You will need to modify this for question 2 (if self.geom == 'circle') and question 3 (if self.geom == 'rectangle')
         """
-        s = np.zeros(2, dtype=np.float32)
-        s[0] = node.state[0]
-        s[1] = node.state[1]
+        if self.geom == 'circle':
+            pass
+        # elif self.geom == 'rectangle':
+        else:
+            s = np.zeros(2, dtype=np.float32)
+            s[0] = node.state[0]
+            s[1] = node.state[1]
 
 
-        for (ox, oy, sizex,sizey) in self.obstacleList:         # goes tru all the obstacles. obs (x, y, width, height)
-            obs=[ox+sizex/2.0,oy+sizey/2.0]                     # gives obs' center point
-            obs_size=[sizex,sizey]
-            cf = False                                          # cf stands for configuration; False: invalid config.
-            for j in range(self.dof):       # check x-axis, y-axis, ... and return True if any of them doesn't collide.
-                if abs(obs[j] - s[j])>obs_size[j]/2.0:
-                    cf=True
-                    break
-            if cf == False:
-                return False
+            for (ox, oy, sizex,sizey) in self.obstacleList:     # goes tru all the obstacles. obs (x, y, width, height)
+                obs=[ox+sizex/2.0,oy+sizey/2.0]                 # gives obs' center point
+                obs_size=[sizex,sizey]
+                cf = False                                      # cf stands for configuration; False: invalid config.
+                for j in range(self.dof):   # check x-axis, y-axis, ... and return True if any of them doesn't collide.
+                    if abs(obs[j] - s[j])>obs_size[j]/2.0:
+                        cf=True
+                        break
+                if cf == False:
+                    return False
 
-        return True  # safe'''
+            return True  # safe
 
     def get_path_to_goal(self):
         """
@@ -403,16 +407,120 @@ class RRT():
             plt.plot(x, y, '-r')
 
         if rnd is not None:                                 # draws the current location of "rnd" as a triangle
-            plt.plot(rnd[0], rnd[1], "^k")
+            
+            if self.geom == 'circle':
+                plt.gca().add_patch(plt.Circle((rnd[0], rnd[1]), 1, color='blue'))
+            # elif self.geom == 'rectangle':
+            #     plt.gca().add_patch()
+            else:
+                plt.plot(rnd[0], rnd[1], "^k")
 
         plt.plot(self.start.state[0], self.start.state[1], "xr")    # draws start state
         plt.plot(self.end.state[0], self.end.state[1], "xr")        # draws end state
         plt.axis("equal")
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
-        plt.pause(0.01)
-        # plt.pause(0.5)
+        # plt.pause(0.01)
+        plt.pause(0.5)
 
+
+class Rectangle():    
+    def __init__(self, x=0, y=0, theta=0, width=3, height=1.5):
+        self.x = x
+        self.y = y
+        self.theta = theta
+        self.width = width
+        self.height = height
+        self.hypotenuse = np.sqrt(np.power(self.width/2, 2)+np.power(self.height/2, 2))
+        self.omega = np.arctan((self.height/2)/(self.width/2)) # RAD
+
+    def getVertices(self):
+        v1 = (self.hypotenuse*np.cos(self.theta+self.omega), self.hypotenuse*np.sin(self.theta+self.omega))
+        v2 = (self.hypotenuse*np.cos(self.theta+np.pi-self.omega), self.hypotenuse*np.sin(self.theta+np.pi-self.omega))
+        v3 = (self.hypotenuse*np.cos(self.theta+np.pi+self.omega), self.hypotenuse*np.sin(self.theta+np.pi+self.omega))
+        v4 = (self.hypotenuse*np.cos(self.theta-self.omega), self.hypotenuse*np.sin(self.theta-self.omega))
+        return [v1,v2,v3,v4]
+
+def rectRectCollision(rect1Vertices, rect2Vertices):
+    for i in range(len(rect1Vertices)):
+        vertex1 = rect1Vertices[i]
+        vertex2 = rect1Vertices[(i+1)%len(rect1Vertices)]
+        delta = diff(vertex2, vertex1)
+        axis = (-delta[1], delta[0])
+        min1, max1 = projectVertices(rect1Vertices, axis)
+        min2, max2 = projectVertices(rect2Vertices, axis)
+        if min1 >= max2 or min2 >= max1:
+            return False
+    
+    for i in range(len(rect2Vertices)):
+        vertex1 = rect2Vertices[i]
+        vertex2 = rect2Vertices[(i+1)%len(rect2Vertices)]
+        delta = diff(vertex2, vertex1)
+        axis = (-delta[1], delta[0])
+        min1, max1 = projectVertices(rect1Vertices, axis)
+        min2, max2 = projectVertices(rect2Vertices, axis)
+        if min1 >= max2 or min2 >= max1:
+            return False
+    return True
+
+def findNearestPointFromCenter(center, vertices):
+    nearestInd = -1
+    min = float('inf')
+
+    for i in range(len(vertices)):
+        v = vertices[i]
+        distance = dist(v, center)
+        if distance < min:
+            min = distance
+            nearestInd = i
+    return nearestInd
+
+def circRectCollision(center, radius, vertices):
+    for i in range(len(vertices)):
+        vertex1 = vertices[i]
+        vertex2 = vertices[(i+1)%len(vertices)]
+        delta = diff(vertex2, vertex1)
+        axis = (-delta[1], delta[0])
+        min1, max1 = projectVertices(vertices, axis)
+        min2, max2 = projectCircle(center, radius, axis)
+        if min1 >= max2 or min2 >= max1:
+            return False
+
+    nearestInd = findNearestPointFromCenter(center, vertices)
+    axis = diff(vertices[nearestInd], center)
+    min1, max1 = projectVertices(vertices, axis)
+    min2, max2 = projectCircle(center, radius, axis)
+    if min1 >= max2 or min2 >= max1:
+        return False
+    return True
+
+def projectCircle(center, radius, axis):
+    axisMag = magnitude(axis)
+    axisNormal = [x/axisMag for x in axis]
+    radiusVector = [x*radius for x in axisNormal]
+    v1 = [x1 + x2 for x1, x2 in zip(center, radiusVector)]
+    v2 = [x1 - x2 for x1, x2 in zip(center, radiusVector)]
+
+    projection1 = np.dot(v1, axis)
+    projection2 = np.dot(v2, axis)
+
+    if projection1 > projection2:
+        return (projection2, projection1)
+    else:
+        return (projection1, projection2)
+
+def projectVertices(vertices, axis):
+    min = float('inf')
+    max = float('-inf')
+
+    for v in vertices:
+        projection = np.dot(v, axis)
+        if projection < min:
+            min = projection
+        if projection > max:
+            max = projection
+    # print(f"min: {min}, max: {max}")
+    return (min, max)
 
 
 class Node():
@@ -459,7 +567,10 @@ def main():
 
     start = [-10, -17]
     goal = [10, 10]
-    dof=2
+    dof = 2
+    if args.geom == 'rectangle':
+        dof = 3
+    print(f"dof: {dof}")
 
     rrt = RRT(start=start, goal=goal, randArea=[-20, 20], obstacleList=obstacleList, dof=dof, alg=args.alg, geom=args.geom, maxIter=args.iter)
     path = rrt.planning(animation=show_animation)

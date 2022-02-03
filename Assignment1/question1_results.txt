@@ -1,9 +1,9 @@
 python3 Assignment1/assign1.py --fast
 Starting planning algorithm 'rrt' with 'point' robot geometry
 SUCCESS - found path of cost 75.80191 in 0.30sec
-Above results to be used with figure_1_rrt.png
+Above results to be used with figure_1_rrt_point.png
 
 python3 Assignment1/assign1.py --alg rrtstar --fast
 Starting planning algorithm 'rrtstar' with 'point' robot geometry
 SUCCESS - found path of cost 35.93428 in 7.12sec
-Above results to be used with figure_2_rrtstar.png
+Above results to be used with figure_2_rrtstar_point.png
