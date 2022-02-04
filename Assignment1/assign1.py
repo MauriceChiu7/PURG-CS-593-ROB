@@ -337,13 +337,36 @@ class RRT():
         You will need to modify this for question 2 (if self.geom == 'circle') and question 3 (if self.geom == 'rectangle')
         """
         if self.geom == 'circle':
-            pass
+            # check if it's overlapping the boundaries
+            center = node.state
+            # set margin for borders with radius = 1
+            if abs(center[0]) > self.maxrand-1 or abs(center[1]) > self.maxrand-1:
+                # print("=====Went OOB!=====")
+                return False # Not safe. Out of boundrary.
+            
+            # loop through the obstacles and check collision with each
+            for (ox, oy, sizex, sizey) in self.obstacleList:    # goes tru all the obstacles. obs (x, y, width, height)
+                obs=[ox+sizex/2.0,oy+sizey/2.0]                 # gives obs' center point
+                obsVertices = getVertices(obs[0], obs[1], sizex, sizey, 0)
+                print("=====")
+                print(f"obstacle BL corner: {(ox, oy)}")
+                print(f"obstacle centerx: {obs[0]}, centery {obs[1]}")
+                print(f"obsVertices: {obsVertices}")
+                cirx, ciry = center
+                print(f"circle centerx: {cirx}, centery: {ciry}")
+                print("=====")
+                isColliding = circRectCollision(center, 1, obsVertices)
+                if not isColliding:
+                    return True # Safe
+            print("=====Collided!=====")
+            return False
+
+
         # elif self.geom == 'rectangle':
         else:
             s = np.zeros(2, dtype=np.float32)
             s[0] = node.state[0]
             s[1] = node.state[1]
-
 
             for (ox, oy, sizex,sizey) in self.obstacleList:     # goes tru all the obstacles. obs (x, y, width, height)
                 obs=[ox+sizex/2.0,oy+sizey/2.0]                 # gives obs' center point
@@ -424,22 +447,41 @@ class RRT():
         plt.pause(0.5)
 
 
-class Rectangle():    
-    def __init__(self, x=0, y=0, theta=0, width=3, height=1.5):
-        self.x = x
-        self.y = y
-        self.theta = theta
-        self.width = width
-        self.height = height
-        self.hypotenuse = np.sqrt(np.power(self.width/2, 2)+np.power(self.height/2, 2))
-        self.omega = np.arctan((self.height/2)/(self.width/2)) # RAD
+# class Rectangle():    
+#     def __init__(self, x=0, y=0, theta=0, width=3, height=1.5):
+#         self.x = x
+#         self.y = y
+#         self.theta = theta
+#         self.width = width
+#         self.height = height
+#         self.hypotenuse = np.sqrt(np.power(self.width/2, 2)+np.power(self.height/2, 2))
+#         self.omega = np.arctan((self.height/2)/(self.width/2)) # RAD
 
-    def getVertices(self):
-        v1 = (self.hypotenuse*np.cos(self.theta+self.omega), self.hypotenuse*np.sin(self.theta+self.omega))
-        v2 = (self.hypotenuse*np.cos(self.theta+np.pi-self.omega), self.hypotenuse*np.sin(self.theta+np.pi-self.omega))
-        v3 = (self.hypotenuse*np.cos(self.theta+np.pi+self.omega), self.hypotenuse*np.sin(self.theta+np.pi+self.omega))
-        v4 = (self.hypotenuse*np.cos(self.theta-self.omega), self.hypotenuse*np.sin(self.theta-self.omega))
-        return [v1,v2,v3,v4]
+#     def getVertices(self):
+#         v1 = (self.hypotenuse*np.cos(self.theta+self.omega), self.hypotenuse*np.sin(self.theta+self.omega))
+#         v2 = (self.hypotenuse*np.cos(self.theta+np.pi-self.omega), self.hypotenuse*np.sin(self.theta+np.pi-self.omega))
+#         v3 = (self.hypotenuse*np.cos(self.theta+np.pi+self.omega), self.hypotenuse*np.sin(self.theta+np.pi+self.omega))
+#         v4 = (self.hypotenuse*np.cos(self.theta-self.omega), self.hypotenuse*np.sin(self.theta-self.omega))
+#         return [v1,v2,v3,v4]
+
+"""
+x = obstacle center x
+y = obstacle center y
+width = width of obstacle
+height = height of obstacle
+theta = theta of obstacle
+"""
+def getVertices(centerx=0, centery=0, width=3, height=1.5, theta=0):    
+    cx = centerx
+    cy = centery
+    theta = theta
+    w = width
+    h = height
+    v1 = (cx - (w/2*np.cos(theta)) - (h/2*np.sin(theta)), cy - (w/2*np.sin(theta)) + (h/2*np.cos(theta)))
+    v2 = (cx + (w/2*np.cos(theta)) - (h/2*np.sin(theta)), cy + (w/2*np.sin(theta)) + (h/2*np.cos(theta)))
+    v3 = (cx + (w/2*np.cos(theta)) + (h/2*np.sin(theta)), cy + (w/2*np.sin(theta)) - (h/2*np.cos(theta)))
+    v4 = (cx - (w/2*np.cos(theta)) + (h/2*np.sin(theta)), cy - (w/2*np.sin(theta)) - (h/2*np.cos(theta)))
+    return [v1,v2,v3,v4]
 
 def rectRectCollision(rect1Vertices, rect2Vertices):
     for i in range(len(rect1Vertices)):
@@ -450,7 +492,7 @@ def rectRectCollision(rect1Vertices, rect2Vertices):
         min1, max1 = projectVertices(rect1Vertices, axis)
         min2, max2 = projectVertices(rect2Vertices, axis)
         if min1 >= max2 or min2 >= max1:
-            return False
+            return False # False means two objects doesn't collide, return early.
     
     for i in range(len(rect2Vertices)):
         vertex1 = rect2Vertices[i]
@@ -460,8 +502,8 @@ def rectRectCollision(rect1Vertices, rect2Vertices):
         min1, max1 = projectVertices(rect1Vertices, axis)
         min2, max2 = projectVertices(rect2Vertices, axis)
         if min1 >= max2 or min2 >= max1:
-            return False
-    return True
+            return False # False means two objects doesn't collide, return early.
+    return True # True means that all axis has overlapping areas. Two objects does collide.
 
 def findNearestPointFromCenter(center, vertices):
     nearestInd = -1
@@ -484,25 +526,29 @@ def circRectCollision(center, radius, vertices):
         min1, max1 = projectVertices(vertices, axis)
         min2, max2 = projectCircle(center, radius, axis)
         if min1 >= max2 or min2 >= max1:
-            return False
+            return False # False means two objects doesn't collide, return early.
 
     nearestInd = findNearestPointFromCenter(center, vertices)
     axis = diff(vertices[nearestInd], center)
     min1, max1 = projectVertices(vertices, axis)
     min2, max2 = projectCircle(center, radius, axis)
     if min1 >= max2 or min2 >= max1:
-        return False
-    return True
+        return False # False means two objects doesn't collide, return early.
+    return True # True means that all axis has overlapping areas. Two objects does collide.
 
 def projectCircle(center, radius, axis):
-    axisMag = magnitude(axis)
-    axisNormal = [x/axisMag for x in axis]
-    radiusVector = [x*radius for x in axisNormal]
+    # axisMag = magnitude(axis)
+    # axisNormal = [x/axisMag for x in axis]
+    # radiusVector = [x*radius for x in axisNormal]
+    normalizedAxis = axis/np.linalg.norm(axis)
+    radiusVector = [x*radius for x in normalizedAxis]
     v1 = [x1 + x2 for x1, x2 in zip(center, radiusVector)]
     v2 = [x1 - x2 for x1, x2 in zip(center, radiusVector)]
 
-    projection1 = np.dot(v1, axis)
-    projection2 = np.dot(v2, axis)
+    # projection1 = np.dot(v1, axis)
+    # projection2 = np.dot(v2, axis)
+    projection1 = np.dot(v1, axis)/magnitude(axis)
+    projection2 = np.dot(v2, axis)/magnitude(axis)
 
     if projection1 > projection2:
         return (projection2, projection1)
@@ -514,7 +560,9 @@ def projectVertices(vertices, axis):
     max = float('-inf')
 
     for v in vertices:
-        projection = np.dot(v, axis)
+        # projection = np.dot(v, axis)
+        projection = np.dot(v, axis)/magnitude(axis)
+
         if projection < min:
             min = projection
         if projection > max:
