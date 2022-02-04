@@ -348,18 +348,20 @@ class RRT():
             for (ox, oy, sizex, sizey) in self.obstacleList:    # goes tru all the obstacles. obs (x, y, width, height)
                 obs=[ox+sizex/2.0,oy+sizey/2.0]                 # gives obs' center point
                 obsVertices = getVertices(obs[0], obs[1], sizex, sizey, 0)
-                print("=====")
-                print(f"obstacle BL corner: {(ox, oy)}")
-                print(f"obstacle centerx: {obs[0]}, centery {obs[1]}")
-                print(f"obsVertices: {obsVertices}")
-                cirx, ciry = center
-                print(f"circle centerx: {cirx}, centery: {ciry}")
-                print("=====")
+                # print("=====")
+                # print(f"obstacle BL corner: {(ox, oy)}")
+                # print(f"obstacle centerx: {obs[0]}, centery {obs[1]}")
+                # print(f"obsVertices: {obsVertices}")
+                # cirx, ciry = center
+                # print(f"circle centerx: {cirx}, centery: {ciry}")
+                # print("=====")
                 isColliding = circRectCollision(center, 1, obsVertices)
-                if not isColliding:
-                    return True # Safe
-            print("=====Collided!=====")
-            return False
+                if isColliding:
+                    print("=====Collided!=====")
+                    return False
+                # break
+            
+            return True # Safe
 
 
         # elif self.geom == 'rectangle':
@@ -444,7 +446,7 @@ class RRT():
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
         # plt.pause(0.01)
-        plt.pause(0.5)
+        plt.pause(0.3)
 
 
 # class Rectangle():    
