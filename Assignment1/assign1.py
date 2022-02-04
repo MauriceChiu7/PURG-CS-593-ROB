@@ -357,7 +357,7 @@ class RRT():
                 # print("=====")
                 isColliding = circRectCollision(center, 1, obsVertices)
                 if isColliding:
-                    print("=====Collided!=====")
+                    # print("=====Collided!=====")
                     return False
                 # break
             
@@ -422,6 +422,8 @@ class RRT():
         for node in self.nodeList:                          # draws the tree
             if node.parent is not None:
                 if node.state is not None:
+                    if self.geom == 'circle':
+                        plt.gca().add_patch(plt.Circle((node.state[0], node.state[1]), 1, color='blue', fill=False))
                     plt.plot([node.state[0], self.nodeList[node.parent].state[0]], [
                         node.state[1], self.nodeList[node.parent].state[1]], "-g")
 
@@ -445,8 +447,8 @@ class RRT():
         plt.axis("equal")
         plt.axis([-20, 20, -20, 20])
         plt.grid(True)
-        # plt.pause(0.01)
-        plt.pause(0.3)
+        plt.pause(0.01)
+        # plt.pause(0.3)
 
 
 # class Rectangle():    
@@ -620,7 +622,7 @@ def main():
     dof = 2
     if args.geom == 'rectangle':
         dof = 3
-    print(f"dof: {dof}")
+    # print(f"dof: {dof}")
 
     rrt = RRT(start=start, goal=goal, randArea=[-20, 20], obstacleList=obstacleList, dof=dof, alg=args.alg, geom=args.geom, maxIter=args.iter)
     path = rrt.planning(animation=show_animation)
