@@ -1,9 +1,29 @@
 python3 Assignment1/assign1.py --fast
 Starting planning algorithm 'rrt' with 'point' robot geometry
-SUCCESS - found path of cost 75.80191 in 0.30sec
+SUCCESS - found path of cost 49.77971 in 0.25sec
 Above results to be used with figure_1_rrt_point.png
 
-python3 Assignment1/assign1.py --alg rrtstar --fast
+python3 Assignment1/assign1.py --fast --alg rrtstar
 Starting planning algorithm 'rrtstar' with 'point' robot geometry
-SUCCESS - found path of cost 35.93428 in 7.12sec
+SUCCESS - found path of cost 36.60443 in 7.22sec
 Above results to be used with figure_2_rrtstar_point.png
+
+python3 Assignment1/assign1.py --fast --geom circle
+Starting planning algorithm 'rrt' with 'circle' robot geometry
+SUCCESS - found path of cost 53.05335 in 5.40sec
+Above results to be used with figure_3_rrt_circle.png
+
+python3 Assignment1/assign1.py --geom circle --alg rrtstar --fast
+Starting planning algorithm 'rrtstar' with 'circle' robot geometry
+SUCCESS - found path of cost 40.01048 in 92.76sec
+Above results to be used with figure_4_rrtstar_circle.png
+
+python3 Assignment1/assign1.py --fast --geom rectangle
+Starting planning algorithm 'rrt' with 'rectangle' robot geometry
+SUCCESS - found path of cost 55.51456 in 5.66sec
+Above result to be used with figure_5_rrt_rectangle.png
+
+python3 Assignment1/assign1.py --fast --geom rectangle --alg rrtstar
+Starting planning algorithm 'rrtstar' with 'rectangle' robot geometry
+SUCCESS - found path of cost 44.65421 in 112.71sec
+Above result to be used with figure_6_rrtstar_rectangle.png

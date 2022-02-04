@@ -12,6 +12,7 @@ import random
 import math
 import copy
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import time
@@ -166,19 +167,21 @@ class RRT():
 
         DISCRETIZATION_STEP=self.expandDis
 
-        dists = np.zeros(self.dof, dtype=np.float32)
-        for j in range(0,self.dof):
+        dists = np.zeros(2, dtype=np.float32)
+        for j in range(0,2):
             dists[j] = dest.state[j] - source.state[j]
-
         distTotal = magnitude(dists)
 
 
         if distTotal>0:
             incrementTotal = distTotal/DISCRETIZATION_STEP
-            for j in range(0,self.dof):
+            for j in range(0,2):
                 dists[j] =dists[j]/incrementTotal
 
             numSegments = int(math.floor(incrementTotal))+1
+            
+            if self.geom == 'rectangle':
+                dTheta = (dest.state[2]-source.state[2])/numSegments
 
             stateCurr = np.zeros(self.dof,dtype=np.float32)
             for j in range(0,self.dof):
@@ -191,8 +194,11 @@ class RRT():
                 if not self.__CollisionCheck(stateCurr):
                     return (False, None)
 
-                for j in range(0,self.dof):
+                for j in range(0,2):
                     stateCurr.state[j] += dists[j]
+
+                if self.geom == 'rectangle':
+                    stateCurr.state[2] += dTheta
 
             if not self.__CollisionCheck(dest):
                 return (False, None)
@@ -210,13 +216,23 @@ class RRT():
 
         returns: random c-space vector
         """
+
         if random.randint(0, 100) > self.goalSampleRate:
             sample=[]
-            for j in range(0,self.dof):
+            for j in range(0,2):                                            # for x and y coordinates
                 sample.append(random.uniform(self.minrand, self.maxrand))
-            rnd=Node(sample)
+
+            if self.geom == 'rectangle':
+                sample.append(random.uniform(0,1)*2*np.pi)
+                rnd=Node(sample)
+            else:
+                rnd=Node(sample)
         else:
+            if self.geom == 'rectangle':
+                rnd = self.end
+                rnd.state.append(random.uniform(0,1)*2*np.pi)
             rnd = self.end
+                
         return rnd
 
     def is_near_goal(self, node):
@@ -359,12 +375,23 @@ class RRT():
                 if isColliding:
                     # print("=====Collided!=====")
                     return False
-                # break
-            
             return True # Safe
-
-
-        # elif self.geom == 'rectangle':
+        elif self.geom == 'rectangle':
+            rectState = node.state
+            rectVertices = getVertices(rectState[0], rectState[1], 3, 1.5, rectState[2])
+            for v in rectVertices:
+                if abs(v[0]) > self.maxrand or abs(v[1]) > self.maxrand:
+                    # print("=====Went OOB!=====")
+                    return False # Not safe. Out of boundrary.
+            
+            for (ox, oy, sizex, sizey) in self.obstacleList:    # goes tru all the obstacles. obs (x, y, width, height)
+                obs=[ox+sizex/2.0,oy+sizey/2.0]                 # gives obs' center point
+                obsVertices = getVertices(obs[0], obs[1], sizex, sizey, 0)
+                isColliding = rectRectCollision(rectVertices, obsVertices)
+                if isColliding:
+                    # print("=====Collided!=====")
+                    return False
+            return True # Safe
         else:
             s = np.zeros(2, dtype=np.float32)
             s[0] = node.state[0]
@@ -410,9 +437,17 @@ class RRT():
         """
         plt.clf()
         # for stopping simulation with the esc key.
-        plt.gcf().canvas.mpl_connect(
+
+        fig = plt.gcf()
+
+        # plt.gcf().canvas.mpl_connect(
+        #     'key_release_event',
+        #     lambda event: [exit(0) if event.key == 'escape' else None])
+        fig.canvas.mpl_connect(
             'key_release_event',
             lambda event: [exit(0) if event.key == 'escape' else None])
+
+        ax = fig.add_subplot(111)
 
         for (ox, oy, sizex, sizey) in self.obstacleList:    # draws the obstacles
             rect = mpatches.Rectangle((ox, oy), sizex, sizey, fill=True, color="purple", linewidth=0.1)
@@ -424,6 +459,14 @@ class RRT():
                 if node.state is not None:
                     if self.geom == 'circle':
                         plt.gca().add_patch(plt.Circle((node.state[0], node.state[1]), 1, color='blue', fill=False))
+                    elif self.geom == 'rectangle':
+                        rect = mpatches.Rectangle((node.state[0]-(3/2), node.state[1]-(1.5/2)), 3, 1.5, fill=False, color="blue", linewidth=1)
+                        # transform = mpl.transforms.Affine2D().rotate_around(node.state[0], node.state[1], node.state[2])
+                        transform = mpl.transforms.Affine2D().rotate_around(node.state[0], node.state[1], node.state[2]) + ax.transData
+                        rect.set_transform(transform)
+                        plt.gca().add_patch(rect)
+                        # plt.gca().add_patch(plt.Circle((node.state[0], node.state[1]), 1, color='blue', fill=False))
+
                     plt.plot([node.state[0], self.nodeList[node.parent].state[0]], [
                         node.state[1], self.nodeList[node.parent].state[1]], "-g")
 
@@ -437,8 +480,13 @@ class RRT():
             
             if self.geom == 'circle':
                 plt.gca().add_patch(plt.Circle((rnd[0], rnd[1]), 1, color='blue'))
-            # elif self.geom == 'rectangle':
-            #     plt.gca().add_patch()
+            elif self.geom == 'rectangle':
+                rect = mpatches.Rectangle((rnd[0]-(3/2), rnd[1]-(1.5/2)), 3, 1.5, fill=True, color="blue", linewidth=0.1)
+                # transform = mpl.transforms.Affine2D().rotate_around(rnd[0], rnd[1], rnd[2])
+                transform = mpl.transforms.Affine2D().rotate_around(rnd[0],rnd[1],rnd[2]) + ax.transData
+                rect.set_transform(transform)
+                plt.gca().add_patch(rect)
+                # plt.gca().add_patch(plt.Circle((rnd[0], rnd[1]), 1, color='blue'))
             else:
                 plt.plot(rnd[0], rnd[1], "^k")
 
@@ -620,8 +668,10 @@ def main():
     start = [-10, -17]
     goal = [10, 10]
     dof = 2
+
     if args.geom == 'rectangle':
         dof = 3
+        start.append(0) # append theta = 0 RAD
     # print(f"dof: {dof}")
 
     rrt = RRT(start=start, goal=goal, randArea=[-20, 20], obstacleList=obstacleList, dof=dof, alg=args.alg, geom=args.geom, maxIter=args.iter)
