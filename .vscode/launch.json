@@ -2,6 +2,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "mpnet_test",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["--epoch", "100", "--N", "100", "--NP", "100", "--data-path", "../../training-data/dataset-s2d"],
+            // "justMyCode": true
+        },
+        {
             "name": "rrt point",
             "type": "python",
             "request": "launch",
