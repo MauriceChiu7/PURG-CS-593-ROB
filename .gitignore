@@ -7,3 +7,9 @@ Assignment3/MPNet-hw/results/
 Assignment3/MPNet-hw/Model/__pycache__/
 
 Assignment3/MPNet-hw/Model/AE/__pycache__/
+
+Assignment3/MPNet-hw/results-wo-dropout/
+
+Assignment3/MPNet-hw/results-wo-lvc/
+
+Assignment3/MPNet-hw/5runs/

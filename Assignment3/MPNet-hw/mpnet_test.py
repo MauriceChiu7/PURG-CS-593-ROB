@@ -9,6 +9,7 @@ import torch
 from plan_general import *
 import plan_s2d  # planning function specific to s2d environment (e.g.: collision checker, normalization)
 import data_loader_2d
+import data_loader_r3d
 from torch.autograd import Variable
 import copy
 import os
@@ -44,6 +45,10 @@ def main(args):
 
     mpNet = End2EndMPNet(total_input_size, AE_input_size, mlp_input_size, \
                 output_size, CAE, MLP)
+
+    # Uncomment this line to run test without dropout.
+    # mpNet.mlp.eval()
+
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
     # load previously trained model if start epoch > 0
@@ -68,6 +73,8 @@ def main(args):
     print('loading...')
     test_data = load_test_dataset(N=args.N, NP=args.NP, s=args.s, sp=args.sp, folder=args.data_path)
     obc, obs, paths, path_lengths = test_data
+    print("len(obs)")
+    print(len(obs[0]))
 
     normalize_func=lambda x: normalize(x, args.world_size)
     unnormalize_func=lambda x: unnormalize(x, args.world_size)
