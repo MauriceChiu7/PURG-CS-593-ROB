@@ -2,12 +2,14 @@ from __future__ import print_function
 from Model.end2end_model import End2EndMPNet
 import Model.model as model
 import Model.AE.CAE as CAE_2d
+import Model.AE.CAE3D as CAE_3d
 import numpy as np
 import argparse
 import os
 import torch
 from plan_general import *
 import plan_s2d  # planning function specific to s2d environment (e.g.: collision checker, normalization)
+import plan_c3d
 import data_loader_2d
 import data_loader_r3d
 from torch.autograd import Variable
@@ -42,6 +44,18 @@ def main(args):
         unnormalize = utility_s2d.unnormalize
         CAE = CAE_2d
         MLP = model.MLP
+    elif args.env_type == 'c3d':
+        total_input_size = 6000+6
+        AE_input_size = 6000
+        mlp_input_size = 28+6
+        output_size = 3
+        IsInCollision = plan_c3d.IsInCollision
+        load_test_dataset = data_loader_r3d.load_test_dataset
+        normalize = utility_s2d.normalize
+        unnormalize = utility_s2d.unnormalize
+        CAE = CAE_3d
+        MLP = model.MLP
+
 
     mpNet = End2EndMPNet(total_input_size, AE_input_size, mlp_input_size, \
                 output_size, CAE, MLP)
@@ -73,8 +87,10 @@ def main(args):
     print('loading...')
     test_data = load_test_dataset(N=args.N, NP=args.NP, s=args.s, sp=args.sp, folder=args.data_path)
     obc, obs, paths, path_lengths = test_data
-    print("len(obs)")
-    print(len(obs[0]))
+    # print("len(obs)")
+    # print(len(obs[0])) # 2800
+    # print("len(obc)")
+    # print(len(obc[0])) # 7
 
     normalize_func=lambda x: normalize(x, args.world_size)
     unnormalize_func=lambda x: unnormalize(x, args.world_size)
@@ -122,7 +138,7 @@ def main(args):
             for t in range(MAX_NEURAL_REPLAN):
                 path = neural_plan(mpNet, path, obc[i], obs[i], IsInCollision, \
                                     normalize_func, unnormalize_func, t==0, step_sz=step_sz)
-                path = lvc(path, obc[i], IsInCollision, step_sz=step_sz)
+                # path = lvc(path, obc[i], IsInCollision, step_sz=step_sz)
                 if feasibility_check(path, obc[i], IsInCollision, step_sz=step_sz):
                     found_path = True
                     n_successful_cur += 1

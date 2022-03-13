@@ -30,7 +30,7 @@ def dist(p1, p2):
     """
     return magnitude(diff(p1, p2))
 
-colors = ["orange", "blue", "green", "black", "red"]
+colors = ["Orange", "Blue", "Green", "Black", "Red"]
 
 def main(args):
     if args.point_cloud:

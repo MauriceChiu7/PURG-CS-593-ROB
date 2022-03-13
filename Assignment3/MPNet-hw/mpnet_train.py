@@ -2,11 +2,13 @@ from __future__ import print_function
 from Model.end2end_model import End2EndMPNet
 import Model.model as model
 import Model.AE.CAE as CAE_2d
+import Model.AE.CAE3D as CAE_3d
 import numpy as np
 import argparse
 import os
 import torch
 import data_loader_2d
+import data_loader_r3d
 from torch.autograd import Variable
 import copy
 import os
@@ -39,11 +41,23 @@ def main(args):
         unnormalize = utility_s2d.unnormalize
         CAE = CAE_2d
         MLP = model.MLP
+    elif args.env_type == 'c3d':
+        total_input_size = 6000+6
+        AE_input_size = 6000
+        mlp_input_size = 28+6
+        output_size = 3
+        load_train_dataset = data_loader_r3d.load_train_dataset
+        normalize = utility_s2d.normalize
+        unnormalize = utility_s2d.unnormalize
+        CAE = CAE_3d
+        MLP = model.MLP
 
     mpNet = End2EndMPNet(total_input_size, AE_input_size, mlp_input_size, \
                         output_size, CAE, MLP)
     # setup loss
     if args.env_type == 's2d':
+        loss_f = mpNet.loss
+    elif args.env_type == 'c3d':
         loss_f = mpNet.loss
 
     if not os.path.exists(args.model_path):
