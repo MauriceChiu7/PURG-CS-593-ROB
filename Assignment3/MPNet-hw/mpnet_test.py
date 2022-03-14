@@ -138,7 +138,7 @@ def main(args):
             for t in range(MAX_NEURAL_REPLAN):
                 path = neural_plan(mpNet, path, obc[i], obs[i], IsInCollision, \
                                     normalize_func, unnormalize_func, t==0, step_sz=step_sz)
-                # path = lvc(path, obc[i], IsInCollision, step_sz=step_sz)
+                path = lvc(path, obc[i], IsInCollision, step_sz=step_sz)
                 if feasibility_check(path, obc[i], IsInCollision, step_sz=step_sz):
                     found_path = True
                     n_successful_cur += 1
