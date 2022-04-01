@@ -44,17 +44,18 @@ MAX_ITERATIONS = 200 # Number of updates to your gradient
 N_EPISODES = 500 # Number of episodes/rollouts
 GAMMA = 0.99 # Discounting factor
 
-def loss_f(args, const_return, returns, distributions):
+def loss_f(args, const_return, returns, log_probs):
+    log_probs = torch.tensor(log_probs)
     loss = 0
     if args.model == '2':
         loss = -1 * torch.div(
             torch.sum(
                 torch.mul(
-                    torch.log(distributions),
+                    log_probs,
                     returns
                 )
             ),
-            len(distributions)
+            len(log_probs)
         )
     elif args.model == '3':
         baseline = None
@@ -62,7 +63,7 @@ def loss_f(args, const_return, returns, distributions):
         loss = -1 * torch.div(
             torch.sum(
                 torch.mul(
-                    torch.log(distributions), 
+                    log_probs, 
                     torch.div(
                         torch.sub(
                             returns, 
@@ -72,17 +73,17 @@ def loss_f(args, const_return, returns, distributions):
                     )
                 )
             ), 
-            len(distributions)
+            len(log_probs)
         )
     else:
         loss = -1 * torch.div(
             torch.sum(
                 torch.mul(
-                    torch.log(distributions), 
+                    log_probs, 
                     const_return
                 )
             ),
-            len(distributions)
+            len(log_probs)
         )
     return loss
 
@@ -164,7 +165,7 @@ def main(args):
             print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {MAX_ITERATIONS}")
             t = 0
             rollout = [] # Trajectory. A list of tuples [(s0, a0, s1, r1), (s1, a1, s2, r2), ..., (sH-1, aH-1, sH, rH)]
-            distributions = [] # the distribution
+            log_probs = [] # the distribution
 
             # get initial observation (agent's initial state s0)
             prev_state = env.reset() 
@@ -181,11 +182,12 @@ def main(args):
 
                 # takes discrete probabilities and create a probability distribution.
                 distribution = torch.distributions.categorical.Categorical(out)
-                distributions.append(distribution)
 
                 # get a sample from distribution
                 action = distribution.sample()
-
+                log_probs.append(distribution.log_prob(action))
+                # print(distribution.log_prob(action))
+                # exit(0)
                 if args.verbose: print(f"action taken: {action}")
                 next_state, reward, done, info = env.step(int(action)) # obs -> state t+1
 
@@ -226,7 +228,12 @@ def main(args):
 
             # ___Calculate Loss___
             optimizer.zero_grad()
-            loss = loss_f(args, const_return, returns, distributions)
+
+            const_return = to_var(torch.tensor(const_return))
+            returns = to_var(torch.FloatTensor(returns))
+            log_probs = to_var(torch.FloatTensor(log_probs))
+            
+            loss = loss_f(args, const_return, returns, log_probs)
             totalLoss += loss
 
             loss.backward()
@@ -234,7 +241,7 @@ def main(args):
 
             # Triple Bam!
         
-        avgLoss = totalLoss / len(N_EPISODES)
+        avgLoss = totalLoss / N_EPISODES
 
         sumTotalRewards = 0
         for tr in totalRewards:

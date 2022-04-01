@@ -5,9 +5,9 @@ import copy
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
         x = x.cuda()
-    return Variable(x, volatile=volatile)
+    return Variable(x, volatile=volatile, requires_grad=True)
 
-def save_state(net, opt, torch_seed, np_seed, py_seed, fname):
+def save_state(net, opt, fname):
     # save both model state and optimizer state
     states = {
         'state_dict': net.state_dict(),
