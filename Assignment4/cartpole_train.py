@@ -29,6 +29,7 @@ If `rand_init=True`, then the arm will initialize to a random location after eac
 # 1. Implemenet a vanilla reinforce algorithm given by the following gradient update for your policy.
 
 import argparse
+import csv
 import gym
 import os
 import pybullet
@@ -44,16 +45,45 @@ N_EPISODES = 500 # Number of episodes/rollouts
 GAMMA = 0.99 # Discounting factor
 
 def loss_f(args, const_return, returns, distributions):
+    loss = 0
     if args.model == '2':
-        for i in range(len(returns)):
-            baseline = None
-            # loss = -1 * torch.sum(torch.log(distributions)) * (returns[i])
+        loss = -1 * torch.div(
+            torch.sum(
+                torch.mul(
+                    torch.log(distributions),
+                    returns
+                )
+            ),
+            len(distributions)
+        )
     elif args.model == '3':
-        for i in range(len(returns)):
-            baseline = None
-            # loss = -1 * torch.sum(torch.log(distributions)) * (returns[i]-baseline)
+        baseline = None
+        sigma = None
+        loss = -1 * torch.div(
+            torch.sum(
+                torch.mul(
+                    torch.log(distributions), 
+                    torch.div(
+                        torch.sub(
+                            returns, 
+                            baseline
+                        ), 
+                        sigma
+                    )
+                )
+            ), 
+            len(distributions)
+        )
     else:
-        loss = -1 * torch.sum(torch.log(distributions)) * (const_return)
+        loss = -1 * torch.div(
+            torch.sum(
+                torch.mul(
+                    torch.log(distributions), 
+                    const_return
+                )
+            ),
+            len(distributions)
+        )
     return loss
 
 def getReturn(rollout, gamma):
@@ -115,8 +145,6 @@ def main(args):
     if not os.path.exists(model_path):
         os.makedirs(model_path)
 
-    model_name = f"cartpole_{args.episodes}"
-
     # policy.parameters() = policy.fc.parameters() They are the same thing!
     if torch.cuda.is_available():
         policy.cuda()
@@ -128,8 +156,10 @@ def main(args):
     #     load_opt_state(policy, os.path.join(args.model_path, model_name))
     
     print("training...")
+    avgRewards = []
     for iter in range(MAX_ITERATIONS):
-        
+        totalRewards = []
+        totalLoss = 0
         for e in range(N_EPISODES):
             print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {MAX_ITERATIONS}")
             t = 0
@@ -186,17 +216,43 @@ def main(args):
             
             # Bam!
 
-            # ___Calculate Baseline___
-            if args.model == '2':
-                pass
-            elif args.model == '3':
-                pass
+            # ___Calculate Total Rewards per Episode___
+            totalReward = 0
+            for i in range(len(rollout)):
+                totalReward += rollout[i][3]
+            totalRewards.append(totalReward)
 
             # Double Bam!
 
             # ___Calculate Loss___
+            optimizer.zero_grad()
             loss = loss_f(args, const_return, returns, distributions)
+            totalLoss += loss
 
+            loss.backward()
+            optimizer.step()
+
+            # Triple Bam!
+        
+        avgLoss = totalLoss / len(N_EPISODES)
+
+        sumTotalRewards = 0
+        for tr in totalRewards:
+            sumTotalRewards += tr
+        avgReward = sumTotalRewards / N_EPISODES
+        avgRewards.append(avgReward)
+
+        if iter % 10 == 0:
+            model_name = f"cartpole_q_{args.model}_episode_{args.episodes}_epoch_{iter}.pkl"
+            save_state(policy, optimizer, os.path.join(model_path, model_name))
+
+        if args.verbose: print(f"iter: {iter},\tavgLoss: {avgLoss},\tavgReward: {avgReward}")
+
+    avgRewardFileName = f"average_reward_q_{args.model}.csv"
+    with open(avgRewardFileName, 'w') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerows(avgRewards)
+    if args.verbose: print(f"\n...average rewards wrote to file: {avgRewardFileName}\n")
 
 
 

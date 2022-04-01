@@ -7,14 +7,14 @@ def to_var(x, volatile=False):
         x = x.cuda()
     return Variable(x, volatile=volatile)
 
-def save_state(net, torch_seed, np_seed, py_seed, fname):
+def save_state(net, opt, torch_seed, np_seed, py_seed, fname):
     # save both model state and optimizer state
     states = {
         'state_dict': net.state_dict(),
-        'optimizer': net.opt.state_dict(),
-        'torch_seed': torch_seed,
-        'np_seed': np_seed,
-        'py_seed': py_seed
+        'optimizer': opt.state_dict()
+        # 'torch_seed': torch_seed,
+        # 'np_seed': np_seed,
+        # 'py_seed': py_seed
     }
     torch.save(states, fname)
 
