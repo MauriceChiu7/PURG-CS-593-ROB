@@ -45,7 +45,7 @@ N_EPISODES = 500 # Number of episodes/rollouts
 GAMMA = 0.99 # Discounting factor
 
 def loss_f(args, const_return, returns, log_probs):
-    log_probs = torch.tensor(log_probs)
+    # log_probs = torch.tensor(log_probs)
     loss = 0
     if args.model == '2':
         loss = -1 * torch.div(
@@ -161,7 +161,7 @@ def main(args):
     for iter in range(MAX_ITERATIONS):
         totalRewards = []
         totalLoss = 0
-        print(f"Iteration {iter} of {MAX_ITERATIONS}")
+        # print(f"Iteration {iter} of {MAX_ITERATIONS}")
         for e in range(N_EPISODES):
             if args.verbose: print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {MAX_ITERATIONS}")
             t = 0
