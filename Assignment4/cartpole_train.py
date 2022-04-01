@@ -261,18 +261,7 @@ def main(args):
         csvwriter.writerows(avgRewards)
     if args.verbose: print(f"\n...average rewards wrote to file: {avgRewardFileName}\n")
 
-
-
-
-
     env.close()
-
-
-    # for gradUpdate in range(200):
-    #     for episode in range(500):
-    #         pass
-
-    exit(0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CS 593-ROB - Assignment 4')
