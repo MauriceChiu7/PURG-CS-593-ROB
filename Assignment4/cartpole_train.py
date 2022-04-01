@@ -161,8 +161,9 @@ def main(args):
     for iter in range(MAX_ITERATIONS):
         totalRewards = []
         totalLoss = 0
+        print(f"Iteration {iter} of {MAX_ITERATIONS}")
         for e in range(N_EPISODES):
-            print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {MAX_ITERATIONS}")
+            if args.verbose: print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {MAX_ITERATIONS}")
             t = 0
             rollout = [] # Trajectory. A list of tuples [(s0, a0, s1, r1), (s1, a1, s2, r2), ..., (sH-1, aH-1, sH, rH)]
             log_probs = [] # the distribution
@@ -253,7 +254,7 @@ def main(args):
             model_name = f"cartpole_q_{args.model}_episode_{args.episodes}_epoch_{iter}.pkl"
             save_state(policy, optimizer, os.path.join(model_path, model_name))
 
-        if args.verbose: print(f"iter: {iter},\tavgLoss: {avgLoss},\tavgReward: {avgReward}")
+        print(f"iter: {iter},\tavgLoss: {avgLoss},\tavgReward: {avgReward}")
 
     avgRewardFileName = f"average_reward_q_{args.model}.csv"
     with open(avgRewardFileName, 'w') as csvfile:
