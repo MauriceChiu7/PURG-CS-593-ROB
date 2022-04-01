@@ -8,17 +8,22 @@ class NN(nn.Module):
     def __init__(self):
         super(NN, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(4, 3), nn.PReLU(), nn.Dropout(), # 4 input for the four states of the cart pole
-            nn.Linear(3, 3), nn.PReLU(), nn.Dropout(),
+            nn.Linear(4, 3), nn.PReLU(), # 4 input for the four states of the cart pole
+            nn.Linear(3, 3), nn.PReLU(),
             nn.Linear(3, 2), nn.Softmax(dim=0)  # 2 output for the control, 0 for left and 1 for right. 
                                                 # Softmax gives a predicted probability distribution.
         )
 
     # Predict. Output is the predicted probability distribution for actions.
     def forward(self, state):
-        # out = self.fc(torch.tensor(state))
-        out = self.fc(state)
+        out = self.fc(torch.FloatTensor(state))
+        # out = self.fc(state)
         return out
+
+    # # Setting up optimizer
+    # def set_opt(self, opt, lr=1e-2):
+    #     # edit: can change optimizer type when setting
+    #     self.opt = opt(list(self.encoder.parameters())+list(self.parameters()), lr=lr)
 
 # class MLP(nn.Module):
 #     def __init__(self, input_size, output_size):

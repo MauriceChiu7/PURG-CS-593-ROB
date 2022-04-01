@@ -34,14 +34,49 @@ import os
 import pybullet
 import math
 import matplotlib.pyplot as plt
-import Model.cartpole_model as model
+from Model.cartpole_model import NN
 import numpy as np
 import torch
 from utility import *
 
-MAX_ITERATION = 200 # Number of updates to your gradient
+MAX_ITERATIONS = 200 # Number of updates to your gradient
 N_EPISODES = 500 # Number of episodes/rollouts
 GAMMA = 0.99 # Discounting factor
+
+def loss_f(args, const_return, returns, distributions):
+    if args.model == '2':
+        for i in range(len(returns)):
+            baseline = None
+            # loss = -1 * torch.sum(torch.log(distributions)) * (returns[i])
+    elif args.model == '3':
+        for i in range(len(returns)):
+            baseline = None
+            # loss = -1 * torch.sum(torch.log(distributions)) * (returns[i]-baseline)
+    else:
+        loss = -1 * torch.sum(torch.log(distributions)) * (const_return)
+    return loss
+
+def getReturn(rollout, gamma):
+    ret = 0.
+    power = 0
+    for i in range(len(rollout)):
+        ret += (gamma**power)*rollout[i][3]
+        power += 1
+    return ret
+
+def getReturn_t(rollout, snapshot, gamma):
+    # Trajectory. A list of tuples [(s0, a0, s1, r1), (s1, a1, s2, r2), ..., (sH-1, aH-1, sH, rH)]
+    ret = 0.
+    rollout = rollout[snapshot:]
+    power = snapshot
+    for i in range(len(rollout)):
+        # print(f"reward: {rollout[i][3]}")
+        # print(f"gamma: {gamma}")
+        # print(f"power: {power}")
+        ret += (gamma**power)*rollout[i][3]
+        # print(f"return: {ret}")
+        power += 1
+    return ret
 
 def main(args):
     try:
@@ -52,53 +87,121 @@ def main(args):
     # ___Set Seed___
 
     # ___Build the Models___
+    if torch.cuda.is_available():
+        if args.verbose: print("cuda available")
+        torch.cuda.set_device(args.device)
+    else: 
+        if args.verbose: print("cuda NOT available")
 
-    policy = model.NN
+    policy = NN()
 
-    # ___Setup Loss___
+    # ___Testing NN___
+    # obs = env.reset()                     # gets you initial state of agent 
+    # print(f"obs: {obs}")                  
+    # out = policy.forward(obs)             # ask NN to make a prediction (softmax applied)
+    # print(f"out: {out}")
+    # distribution = torch.distributions.categorical.Categorical(out) # takes a probabilities and create a prob. dist.
+    # print(f"distribution: {distribution}")
+    # action = distribution.sample()        # get a sample from distribution
+    # print(f"action: {action}")
+    # exit(0)
 
+    # ___Setup Loss___ Just call loss_f wherever needed.
+    # loss = loss_f() # exit(0)
+
+    #___Load Previously Trained Model If Start Epoch > 0___ Skipping
     model_path = f"./models"
+
     if not os.path.exists(model_path):
         os.makedirs(model_path)
+
     model_name = f"cartpole_{args.episodes}"
 
-    obs = env.reset()
-    print(obs)
-    out = policy.forward(obs)
-    print(out)
-    exit(0)
+    # policy.parameters() = policy.fc.parameters() They are the same thing!
+    if torch.cuda.is_available():
+        policy.cuda()
+        optimizer = torch.optim.Adagrad(list(policy.parameters()), lr=args.learning_rate)
+    
+    optimizer = torch.optim.Adagrad(list(policy.parameters()), lr=args.learning_rate)
 
-    for iter in range(MAX_ITERATION):
+    # if args.start_epoch > 0:
+    #     load_opt_state(policy, os.path.join(args.model_path, model_name))
+    
+    print("training...")
+    for iter in range(MAX_ITERATIONS):
         
         for e in range(N_EPISODES):
+            print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {MAX_ITERATIONS}")
             t = 0
             rollout = [] # Trajectory. A list of tuples [(s0, a0, s1, r1), (s1, a1, s2, r2), ..., (sH-1, aH-1, sH, rH)]
-            obs = env.reset() # get initial observation (robot's initial state s0)
+            distributions = [] # the distribution
+
+            # get initial observation (agent's initial state s0)
+            prev_state = env.reset() 
+
             terminate = False
             while not terminate:
                 if not args.fast: env.render()
-                print(obs)  # [ 0.04457668 -0.03367179 -0.01488337 -0.03034673  ]   obs -> state t
-                            # [ cart pos   cart vel    pole angle  pole ang vel ]
-                cartPos = obs[0]
-                cartVel = obs[1]
-                poleAng = obs[2]
-                poleAnV = obs[3]
-                action = env.action_space.sample()
-                obs, reward, done, info = env.step(action) # obs -> state t+1
+                # if args.verbose: print(obs)  
+                # [ 0.04457668 -0.03367179 -0.01488337 -0.03034673  ]   obs -> state t
+                # [ cart pos   cart vel    pole angle  pole ang vel ]
+
+                # ask NN to make a prediction (softmax applied)
+                out = policy.forward(prev_state)
+
+                # takes discrete probabilities and create a probability distribution.
+                distribution = torch.distributions.categorical.Categorical(out)
+                distributions.append(distribution)
+
+                # get a sample from distribution
+                action = distribution.sample()
+
+                if args.verbose: print(f"action taken: {action}")
+                next_state, reward, done, info = env.step(int(action)) # obs -> state t+1
+
+                # Store the states, actions, new states, and rewards
+                snapshot = (prev_state, action, next_state, reward)
+                # print(f"snapshot; {snapshot}")
+
+                rollout.append(snapshot)
+                
+                prev_state = next_state
+
                 terminate = done
-                # print(f"run: {run}")
                 t += 1
 
-            print(f"Episode finished after {t} timesteps\n")
-            
-                
-                # Store the states, actions, new states, and rewards
-                
-            # Calculate discountedReturn(rollout.reward) w.r.t. time
-            # Calculate baseline(R)
-            # Calculate loss(reward)
+            if args.verbose: print(f"Episode finished after {t} timesteps.")
 
+            const_return = 0
+            returns = []
+            if args.model == '1':
+                # ___Calculate Constant Return___
+                const_return = getReturn(rollout, GAMMA)
+
+            else:
+                # ___Calculate Return w.r.t. Time___
+                for snapshot in range(len(rollout)):
+                    ret = getReturn_t(rollout, snapshot, GAMMA)
+                    returns.append(ret)
             
+            # Bam!
+
+            # ___Calculate Baseline___
+            if args.model == '2':
+                pass
+            elif args.model == '3':
+                pass
+
+            # Double Bam!
+
+            # ___Calculate Loss___
+            loss = loss_f(args, const_return, returns, distributions)
+
+
+
+
+
+
     env.close()
 
 
@@ -115,6 +218,7 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--episodes', default=500, type=int, help='Number of episodes to execute.')
     parser.add_argument('-l', '--learning-rate', default=0.01, type=float, help='Learning rate.')
     parser.add_argument('-f', '--fast', action='store_true', help='Set to disable live animation.')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Print logs.')
 
     args = parser.parse_args()
 
