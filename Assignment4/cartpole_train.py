@@ -71,8 +71,8 @@ def loss_f2(args, returns, log_probs):
             )
     elif args.model == '3':
         # print("\nCalculating loss with function 3\n")
-        baseline = None
-        sigma = None
+        baseline = torch.mean(returns)
+        sigma = torch.std(returns)
         loss = -1 * torch.sum(
                 torch.mul(
                     log_probs, 
@@ -107,11 +107,7 @@ def getReturn_t(rollout, snapshot, gamma):
     rollout = rollout[snapshot:]
     power = snapshot
     for i in range(len(rollout)):
-        # print(f"reward: {rollout[i][3]}")
-        # print(f"gamma: {gamma}")
-        # print(f"power: {power}")
         ret += (gamma**power)*rollout[i][3]
-        # print(f"return: {ret}")
         power += 1
     if args.verbose: print(f"===> ret:\t\t", ret)
     return ret
@@ -133,21 +129,6 @@ def main(args):
 
     policy = NN()
 
-    # ___Testing NN___
-    # obs = env.reset()                     # gets you initial state of agent 
-    # print(f"obs: {obs}")                  
-    # out = policy.forward(obs)             # ask NN to make a prediction (softmax applied)
-    # print(f"out: {out}")
-    # distribution = torch.distributions.categorical.Categorical(out) # takes a probabilities and create a prob. dist.
-    # print(f"distribution: {distribution}")
-    # action = distribution.sample()        # get a sample from distribution
-    # print(f"action: {action}")
-    # exit(0)
-
-    # ___Setup Loss___ Just call loss_f wherever needed.
-    # loss = loss_f() # exit(0)
-
-    #___Load Previously Trained Model If Start Epoch > 0___ Skipping
     model_path = f"./models"
 
     if not os.path.exists(model_path):
@@ -161,6 +142,7 @@ def main(args):
     
     optimizer = torch.optim.Adam(list(policy.fc.parameters()), lr=args.learning_rate)
 
+    #___Load Previously Trained Model If Start Epoch > 0___ Skipping
     # if args.start_epoch > 0:
     #     load_opt_state(policy, os.path.join(args.model_path, model_name))
     
@@ -255,6 +237,7 @@ def main(args):
             
             loss = torch.tensor(0.)
             log_probs = torch.stack(log_probs)
+            returns = torch.stack(returns)
             if args.model == '1':
                 # const_return = to_var(torch.FloatTensor(const_return))
                 if args.verbose: print(f"===> const_return:\t", const_return)
