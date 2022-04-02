@@ -237,7 +237,10 @@ def main(args):
             
             loss = torch.tensor(0.)
             log_probs = torch.stack(log_probs)
-            returns = torch.stack(returns)
+            
+            if len(returns) > 0:
+                returns = torch.stack(returns)
+
             if args.model == '1':
                 # const_return = to_var(torch.FloatTensor(const_return))
                 if args.verbose: print(f"===> const_return:\t", const_return)
