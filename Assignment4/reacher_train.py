@@ -1,3 +1,8 @@
+"""
+env = gym.make("modified_gym_env:ReacherPyBulletEnv-v1", rand_init=False)
+If `rand_init=True`, then the arm will initialize to a random location after each reset.
+"""
+
 import argparse
 import csv
 import gym
