@@ -8,43 +8,57 @@
 import argparse
 import csv
 import matplotlib.pyplot as plt
+import re
 
 colors = ["Orange", "Blue", "Green", "Black", "Red"]
 
 def main(args):
-    pathNum = 1
     legends = []
-    pathName = args.path_file[0].split('/')[-1].split('.')[0]
 
-    for path_file in args.path_file:
-        # visualize path
-        if path_file.endswith('.txt'):
-            path = np.loadtxt(path_file)
-        else:
-            path = np.fromfile(path_file)
-        path = path.reshape(-1, 2)
-        print(f'path {pathNum}:\n{path}\n')
-        path_x = []
-        path_y = []
-        for i in range(len(path)):
-            path_x.append(path[i][0])
-            path_y.append(path[i][1])
+    # pathName = args.path_file[0].split('/')[-1].split('.')[0]
 
-        if path_file.endswith('.txt'):
-            subtitle = f"Path {pathNum} - Type: MPNet ({colors[pathNum-1]}), Path Total Cost: {path_cost}"
-            # lineColor = "blue"
-        else: 
-            subtitle = f"Path {pathNum} - Type: RRT* ({colors[pathNum-1]}), Path Total Cost: {path_cost}"
-            # lineColor = "orange"
+    for i in range(len(args.file_paths)):
+        model = args.file_paths[i].split('.')[0].split('_')[3]
+        episodes = args.file_paths[i].split('.')[0].split('_')[5]
+        # print(model)
+        # print(iterations)
+        # exit(0)
+        file = open(args.file_paths[i])
+        csvreader = csv.reader(file)
+        tensor_data = []
+        for row in csvreader:
+            tensor_data = row
+        file.close()
+        # if args.verbose: print(f"\n...final actions read\n")
 
-        plt.plot(path_x, path_y, color=colors[pathNum-1], marker='o')
+        # print(tensor_data)
+
+        y_axis_avgRew = []
+        for td in tensor_data:
+            # print(td)
+            match = re.search('\(([^\)]+)\)', td)
+            # print(match.group(1))
+            numeric = float(match.group(1))
+
+            # exit(0)
+            y_axis_avgRew.append(numeric)
+        x_axis_iter = [i+1 for i in range(len(y_axis_avgRew))]
+        # print(len(y_axis_avgRew))
+        # print(len(x_axis_iter))
+        # print(y_axis_avgRew)
+        # print(x_axis_iter)
+        
+
+        subtitle = f"Avg Reward with Q-1.{model} Loss Function and {episodes} Episodes ({colors[i]})"
+        
+
+        plt.plot(x_axis_iter, y_axis_avgRew, color=colors[i], marker='o')
         legends.append(subtitle)
-        pathNum += 1
 
     for l in legends:
         plt.figtext(0.1, 0.95-(0.05*legends.index(l)), l)
 
-    plt.figtext(0.1, 0.02, f"env-id: {args.env_id}, path-file: {pathName}", wrap=True)
+    plt.figtext(0.1, 0.02, f"Average Rewards", wrap=True)
 
     plt.show()
 
