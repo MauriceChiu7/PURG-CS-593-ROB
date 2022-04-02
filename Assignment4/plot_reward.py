@@ -8,6 +8,7 @@
 import argparse
 import csv
 import matplotlib.pyplot as plt
+import re
 
 colors = ["Orange", "Blue", "Green", "Black", "Red"]
 
@@ -23,12 +24,24 @@ def main(args):
         # print(iterations)
         # exit(0)
         file = open(args.file_paths[i])
-        csvreader = csv.reader(file, quoting=csv.QUOTE_NONNUMERIC)
-        y_axis_avgRew = []
+        csvreader = csv.reader(file)
+        tensor_data = []
         for row in csvreader:
-            y_axis_avgRew = row
+            tensor_data = row
         file.close()
         # if args.verbose: print(f"\n...final actions read\n")
+
+        # print(tensor_data)
+
+        y_axis_avgRew = []
+        for td in tensor_data:
+            # print(td)
+            match = re.search('\(([^\)]+)\)', td)
+            # print(match.group(1))
+            numeric = float(match.group(1))
+
+            # exit(0)
+            y_axis_avgRew.append(numeric)
         x_axis_iter = [i+1 for i in range(len(y_axis_avgRew))]
         # print(len(y_axis_avgRew))
         # print(len(x_axis_iter))
