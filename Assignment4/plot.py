@@ -10,7 +10,7 @@ import csv
 import matplotlib.pyplot as plt
 import re
 
-colors = ["Orange", "Blue", "Green", "Black", "Red"]
+colors = ["Orange", "Blue", "Green", "Red", "Black"]
 
 def main(args):
     legends = []
@@ -19,13 +19,13 @@ def main(args):
 
     for i in range(len(args.file_paths)):
         print(args.file_paths[i])
-        # if args.success_rate:
-        model = args.file_paths[i].split('.')[0].split('_')[3]
-        episodes = args.file_paths[i].split('.')[0].split('_')[5]
-        epochs = args.file_paths[i].split('.')[0].split('_')[7]
-        # else: 
-        #     model = args.file_paths[i].split('.')[0].split('_')[3]
-        #     episodes = args.file_paths[i].split('.')[0].split('_')[5]
+        if args.training_data:
+            model = args.file_paths[i].split('.')[0].split('_')[3]
+            episodes = args.file_paths[i].split('.')[0].split('_')[5]
+        else: 
+            model = args.file_paths[i].split('.')[0].split('_')[3]
+            episodes = args.file_paths[i].split('.')[0].split('_')[5]
+            epochs = args.file_paths[i].split('.')[0].split('_')[7]
 
         # exit(0)
         file = open(args.file_paths[i])
@@ -53,10 +53,15 @@ def main(args):
         # print(y_axis_avgRew)
         # print(x_axis_iter)
         
-        if args.success_rate: 
-            subtitle = f"Success Rate with Q-1.{model} Loss Function Trained for {epochs} Tested on 100 Episodes ({colors[i]})"
-        else: 
+        if args.training_data:
             subtitle = f"Avg Reward with Q-1.{model} Loss Function and {episodes} Episodes ({colors[i]})"
+        else:
+            if args.success_rate: 
+                averageSuccessRate = sum(y_axis_avgRew)/len(y_axis_avgRew)
+                subtitle = f"Success Rate with Q-1.{model} Loss Function Trained for {episodes} Episodes for {epochs} Iterations, Tested on 100 Episodes ({colors[i]}) - Average: {averageSuccessRate}"
+            else: 
+                averageReward = sum(y_axis_avgRew)/len(y_axis_avgRew)
+                subtitle = f"Avg Reward with Q-1.{model} Loss Function Trained for {episodes} Episodes for {epochs} Iterations, Tested on 100 Episodes ({colors[i]}) - Average of the average rewards: {averageReward}"
         
         plt.xlabel("Iterations / Epochs")
         if args.success_rate: 
@@ -87,6 +92,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CS 593-ROB - Assignment 4')
     parser.add_argument('-f', '--file-paths', nargs='*', type=str, default=[], help='File paths')
     parser.add_argument('-s', '--success-rate', action='store_true', help='Plots success rates instead of average rewards.')
+    parser.add_argument('-t', '--training-data', action='store_true', help='Plots average rewards from training.')
+
     
     args = parser.parse_args()
     

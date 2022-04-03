@@ -26,7 +26,7 @@ def loss_f1(const_return, log_probs):
     # if args.verbose: print(f"===> log_probs[0]:\t", log_probs[0])
 
     # print("\nCalculating loss with function 1\n")
-    loss = 1 * torch.sum(
+    loss = -1 * torch.sum(
             torch.mul(
                 log_probs, 
                 const_return
@@ -40,7 +40,7 @@ def loss_f2(args, returns, log_probs):
     loss = 0
     if args.model == '2':
         # print("\nCalculating loss with function 2\n")
-        loss = 1 * torch.sum(
+        loss = -1 * torch.sum(
                 torch.mul(
                     log_probs,
                     returns
@@ -52,7 +52,7 @@ def loss_f2(args, returns, log_probs):
         if args.verbose: print(f"===> baseline:\t\t", baseline)
         sigma = torch.std(returns)
         if args.verbose: print(f"===> sigma:\t\t", sigma)
-        loss = 1 * torch.sum(
+        loss = -1 * torch.sum(
                 torch.mul(
                     log_probs, 
                     torch.div(
@@ -179,7 +179,7 @@ def main(args):
                 if args.verbose: print(f"===> mu:\t\t", mu)
                 # print(f"===> mu:\t\t", mu)
 
-                cov = torch.mul(torch.eye(len(mu)), 1e-2)
+                cov = torch.mul(torch.eye(len(mu)), 1)
                 if args.verbose: print(f"===> cov:\n", cov)
                 # print(f"===> cov:\n", cov)
 
@@ -310,12 +310,12 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CS 593-ROB - Assignment 4')
-    parser.add_argument('-m', '--model', default='1', choices=['1', '2', '3'], \
+    parser.add_argument('-m', '--model', default='1', choices=['1', '2'], \
         help='Enter 1 for question 1, part 1. Enter 2 for question 1 part 2. Enter 3 for question 1, part 3')
     parser.add_argument('-i', '--iterations', default=200, type=int, help='Number of iterations/epochs.')
     parser.add_argument('-e', '--episodes', default=500, type=int, help='Number of episodes to execute.')
     parser.add_argument('-l', '--learning-rate', default=0.01, type=float, help='Learning rate.')
-    parser.add_argument('-r', '--random-start', action='store_true', help='Print logs.')
+    parser.add_argument('-r', '--random-start', action='store_true', help='Set rand_init of the reacher to True.')
     parser.add_argument('-f', '--fast', action='store_true', help='Set to disable live animation.')
     parser.add_argument('-s', '--slow', action='store_true', help='Play live animation in slow motion.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Print logs.')

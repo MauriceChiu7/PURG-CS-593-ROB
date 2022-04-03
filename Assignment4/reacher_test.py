@@ -16,8 +16,8 @@ import random
 import torch
 from utility import *
 
-MAX_ITERATIONS = 1 # Number of updates to your gradient
-N_EPISODES = 1 # Number of episodes/rollouts
+MAX_ITERATIONS = 200 # Number of updates to your gradient
+N_EPISODES = 100 # Number of episodes/rollouts
 GAMMA = 0.9 # Discounting factor
 
 def loss_f1(const_return, log_probs):
@@ -145,7 +145,11 @@ def main(args):
         totalLoss = torch.tensor(0.)
         # print(f"Iteration {iter} of {args.iterations}")
         success = torch.tensor(0.)
+        # successTextId = None
         for e in range(N_EPISODES):
+            # if successTextId: 
+            #     print("removed debug text")
+            #     p.removeUserDebugItem(successTextId)
             # set seed
             torch_seed = np.random.randint(low=0, high=1000)
             np_seed = np.random.randint(low=0, high=1000)
@@ -165,6 +169,8 @@ def main(args):
             # print("--v env.reset() v--")
             prev_state = env.reset() 
             # print("--^ env.reset() ^--")
+
+            p.addUserDebugText("Restarted", [-0.2, 0.2, 0], [1, 0, 0], 2, 0.5)
 
             # print(f"\npolicy.state_dict at iter {iter}, episode {e}:\n{policy.state_dict()}\n")
 
@@ -226,6 +232,7 @@ def main(args):
 
             if t < 150:
                 success += 1
+                p.addUserDebugText(f"SUCCESS! Completed at time step {t}", [-0.25, -0.2, 0], [0, 1, 0], 2, 1)
             
 
             if args.verbose: print(f"Episode finished after {t} timesteps.")
@@ -326,11 +333,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CS 593-ROB - Assignment 4')
-    parser.add_argument('-m', '--model', default='1', choices=['1', '2', '3'], \
-        help='Enter 1 for question 1, part 1. Enter 2 for question 1 part 2. Enter 3 for question 1, part 3')
-    parser.add_argument('-i', '--iterations', default=200, type=int, help='Number of iterations/epochs.')
-    parser.add_argument('-e', '--episodes', default=500, type=int, help='Number of episodes to execute.')
-    parser.add_argument('-r', '--random-start', action='store_true', help='Print logs.')
+    parser.add_argument('-m', '--model', default='1', choices=['1', '2'], \
+        help='Enter 1 to use the model for question 1, part 1. Enter 2 to use the model for question 1 part 2.')
+    parser.add_argument('-i', '--iterations', default=200, type=int, help='Number of iterations/epochs to use.')
+    parser.add_argument('-e', '--episodes', default=500, type=int, help='Number of episodes to use.')
+    parser.add_argument('-r', '--random-start', action='store_true', help='Set rand_init of the reacher to True.')
     parser.add_argument('-f', '--fast', action='store_true', help='Set to disable live animation.')
     parser.add_argument('-s', '--slow', action='store_true', help='Play live animation in slow motion.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Print logs.')
