@@ -7,16 +7,18 @@ import argparse
 import csv
 import gym
 import os
-import pybullet
+import pybullet as p
+import time
 import math
-from Model.cartpole_model import NN
+from Model.reacher_model import NN
 import numpy as np
+import random
 import torch
 from utility import *
 
-MAX_ITERATIONS = 200 # Number of updates to your gradient
+# MAX_ITERATIONS = 200 # Number of updates to your gradient
 # N_EPISODES = 500 # Number of episodes/rollouts
-GAMMA = 0.99 # Discounting factor
+GAMMA = 0.9 # Discounting factor
 
 def loss_f1(const_return, log_probs):
     # log_probs = torch.FloatTensor(log_probs) # WILL LOSE grad_fn
@@ -47,7 +49,9 @@ def loss_f2(args, returns, log_probs):
     elif args.model == '3':
         # print("\nCalculating loss with function 3\n")
         baseline = torch.mean(returns)
+        if args.verbose: print(f"===> baseline:\t\t", baseline)
         sigma = torch.std(returns)
+        if args.verbose: print(f"===> sigma:\t\t", sigma)
         loss = -1 * torch.sum(
                 torch.mul(
                     log_probs, 
@@ -91,7 +95,22 @@ def main(args):
     try:
         env.reset()
     except NameError:
-        env = gym.make('CartPole-v1')
+        if args.random_start: print("rand_init: ", args.random_start)
+        env = gym.make("modified_gym_env:ReacherPyBulletEnv-v1", rand_init=args.random_start)
+
+    # print("observation_space: ", env.observation_space)
+    # print("action_space: ", env.action_space)
+    # prev_state = env.reset() 
+    # print("prev_state:", prev_state)
+    
+    # [ 0.3928371 0.3928371 -0.68091764       0.26561381        0.5          0.         0.08333333   0.       ]
+    # [ target_x, target_y, to_target_vec[0], to_target_vec[1], theta/np.pi, theta_dot, gamma/np.pi, gamma_dot]
+            
+    # next_state, reward, done, info = env.step(np.array([0.5,0.5]))
+    # print("next_state: ", next_state)
+    # print("reward: ", reward)
+    # print("done: ", done)
+    # exit(0)
 
     # ___Set Seed___
 
@@ -124,53 +143,73 @@ def main(args):
     print("training...")
     avgRewards = []
     if args.verbose: print(f"===> avgRewards:\t", avgRewards)
-    for iter in range(MAX_ITERATIONS):
+    for iter in range(args.iterations):
         totalRewards = []
         totalLoss = torch.tensor(0.)
-        # print(f"Iteration {iter} of {MAX_ITERATIONS}")
+        # print(f"Iteration {iter} of {args.iterations}")
         for e in range(args.episodes):
-            if args.verbose: print(f"Episode {e} of {args.episodes}, iteration {iter} of {MAX_ITERATIONS}")
+            # set seed
+            torch_seed = np.random.randint(low=0, high=1000)
+            np_seed = np.random.randint(low=0, high=1000)
+            py_seed = np.random.randint(low=0, high=1000)
+            torch.manual_seed(torch_seed)
+            np.random.seed(np_seed)
+            random.seed(py_seed)
+
+            if args.verbose: print(f"Episode {e} of {args.episodes}, iteration {iter} of {args.iterations}")
             t = 0
             rollout = [] # Trajectory. A list of tuples [(s0, a0, s1, r1), (s1, a1, s2, r2), ..., (sH-1, aH-1, sH, rH)]
             log_probs = [] # the distribution
 
+            if not args.fast: env.render()
+            
             # get initial observation (agent's initial state s0)
+            # print("--v env.reset() v--")
             prev_state = env.reset() 
+            # print("--^ env.reset() ^--")
 
+            p.resetDebugVisualizerCamera(cameraDistance=0.4, cameraYaw=0, cameraPitch=-89, cameraTargetPosition=(0,0,0))
             terminate = False
             while not terminate:
-                if not args.fast: env.render()
-                # if args.verbose: print(obs)  
-                # [ 0.04457668 -0.03367179 -0.01488337 -0.03034673  ]   obs -> state t
-                # [ cart pos   cart vel    pole angle  pole ang vel ]
-
-                # ask NN to make a prediction (softmax applied)
-                out = policy.forward(prev_state)
-                if args.verbose: print(f"===> out:\t\t", out)
-
-                # takes discrete probabilities and create a probability distribution.
-                distribution = torch.distributions.categorical.Categorical(out)
-
-                # get a sample from distribution
-                action = distribution.sample()
-
-                action_prob = out[(action)]
-                if args.verbose: print(f"===> action_prob:\t", action_prob)
-
-                log_of_ap = torch.log(action_prob)
-                if args.verbose: print(f"===> log_of_ap:\t\t", log_of_ap)
                 
-                # logp = distribution.log_prob(action)
-                # if args.verbose: print(f"===> logp:\t\t", logp)
+                # if args.verbose: print(obs)  
 
-                # log_probs.append(logp)
-                log_probs.append(log_of_ap)
+                # ask NN to make output 2 means
+                mu = policy.forward(prev_state)
+                if args.verbose: print(f"===> mu:\t\t", mu)
+                # print(f"===> mu:\t\t", mu)
+
+                cov = torch.mul(torch.eye(len(mu)), torch.pi)
+                if args.verbose: print(f"===> cov:\n", cov)
+                # print(f"===> cov:\n", cov)
+
+                # Use the 2 means and a constant cov matrix to construct two normal dists.
+                distribution = torch.distributions.multivariate_normal.MultivariateNormal(mu, cov)
+                # if args.verbose: print(f"===> distribution\t", distribution)
+
+                # get a sample from each normal distribution and constuct them as actions to pass to env.step()
+                action = distribution.sample()
+                if args.verbose: print(f"===> action:\t", action)
+
+                # action_prob = out[(action)]
+                # if args.verbose: print(f"===> action_prob:\t", action_prob)
+
+                # log_of_ap = torch.log(action_prob)
+                # if args.verbose: print(f"===> log_of_ap:\t\t", log_of_ap)
+                
+                logp = distribution.log_prob(action)
+                if args.verbose: print(f"===> logp:\t\t", logp)
+                # print(f"===> logp:\t\t", logp)
+                # print("================================")
+
+                log_probs.append(logp)
+                # log_probs.append(log_of_ap)
                 # if args.verbose: print(f"===> log_probs: \t", log_probs) # correct!
 
-                # exit(0)
+                next_state, reward, done, info = env.step(action) # obs -> state t+1
                 
-                if args.verbose: print(f"action taken: action")
-                next_state, reward, done, info = env.step(int(action)) # obs -> state t+1
+                # exit(0)
+                if args.slow: time.sleep(1./25.)
                 
                 # Store the states, actions, new states, and rewards
                 snapshot = (prev_state, action, next_state, reward)
@@ -197,7 +236,7 @@ def main(args):
                     ret = getReturn_t(rollout, snapshot, GAMMA)
                     if args.verbose: print(f"===> ret:\t\t", ret)
                     returns.append(ret)
-                if args.verbose: print(f"===> returns:\t\t", returns)
+                if args.verbose: print(f"===> returns:\n", returns)
             
             # Bam!
 
@@ -225,7 +264,7 @@ def main(args):
                 if args.verbose: print(f"===> loss:\t\t", loss)
             else:
                 # returns = to_var(torch.FloatTensor(returns))
-                if args.verbose: print(f"===> returns:\t\t", returns)
+                if args.verbose: print(f"===> returns:\n", returns)
                 loss = loss_f2(args, returns, log_probs)
                 if args.verbose: print(f"===> loss:\t\t", loss)
                 
@@ -270,9 +309,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CS 593-ROB - Assignment 4')
     parser.add_argument('-m', '--model', default='1', choices=['1', '2', '3'], \
         help='Enter 1 for question 1, part 1. Enter 2 for question 1 part 2. Enter 3 for question 1, part 3')
+    parser.add_argument('-i', '--iterations', default=200, type=int, help='Number of iterations/epochs.')
     parser.add_argument('-e', '--episodes', default=500, type=int, help='Number of episodes to execute.')
     parser.add_argument('-l', '--learning-rate', default=0.01, type=float, help='Learning rate.')
+    parser.add_argument('-r', '--random-start', action='store_true', help='Print logs.')
     parser.add_argument('-f', '--fast', action='store_true', help='Set to disable live animation.')
+    parser.add_argument('-s', '--slow', action='store_true', help='Play live animation in slow motion.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Print logs.')
 
     args = parser.parse_args()
