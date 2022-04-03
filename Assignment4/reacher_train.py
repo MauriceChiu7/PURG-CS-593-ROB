@@ -26,7 +26,7 @@ def loss_f1(const_return, log_probs):
     # if args.verbose: print(f"===> log_probs[0]:\t", log_probs[0])
 
     # print("\nCalculating loss with function 1\n")
-    loss = -1 * torch.sum(
+    loss = 1 * torch.sum(
             torch.mul(
                 log_probs, 
                 const_return
@@ -40,7 +40,7 @@ def loss_f2(args, returns, log_probs):
     loss = 0
     if args.model == '2':
         # print("\nCalculating loss with function 2\n")
-        loss = -1 * torch.sum(
+        loss = 1 * torch.sum(
                 torch.mul(
                     log_probs,
                     returns
@@ -52,7 +52,7 @@ def loss_f2(args, returns, log_probs):
         if args.verbose: print(f"===> baseline:\t\t", baseline)
         sigma = torch.std(returns)
         if args.verbose: print(f"===> sigma:\t\t", sigma)
-        loss = -1 * torch.sum(
+        loss = 1 * torch.sum(
                 torch.mul(
                     log_probs, 
                     torch.div(
@@ -284,8 +284,9 @@ def main(args):
         avgReward = sumTotalRewards / args.episodes
         avgRewards.append(avgReward)
 
-        if iter+1 % 10 == 0:
-            model_name = f"cartpole_q_{args.model}_episode_{args.episodes}_epoch_{iter}.pkl"
+        if (iter+1) % 10 == 0:
+            print(f"model at {iter+1} saved")
+            model_name = f"reacher_lossfunc_{args.model}_episode_{args.episodes}_epoch_{iter+1}.pkl"
             save_state(policy, optimizer, os.path.join(model_path, model_name))
         
         optimizer.zero_grad()
@@ -297,7 +298,7 @@ def main(args):
 
         print(f"Iter: {iter},\tavgLoss: {avgLoss},\tavgReward: {avgReward}")
 
-    avgRewardFileName = f"average_reward_model_{args.model}_episodes_{args.episodes}.csv"
+    avgRewardFileName = f"reacherAverage_reward_model_{args.model}_episodes_{args.episodes}.csv"
     with open(avgRewardFileName, 'w') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(avgRewards)
