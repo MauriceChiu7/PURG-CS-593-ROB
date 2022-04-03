@@ -19,27 +19,3 @@ class NN(nn.Module):
         out = self.fc(torch.FloatTensor(state))
         # out = self.fc(state)
         return out
-
-    # # Setting up optimizer
-    # def set_opt(self, opt, lr=1e-2):
-    #     # edit: can change optimizer type when setting
-    #     self.opt = opt(list(self.encoder.parameters())+list(self.parameters()), lr=lr)
-
-# class MLP(nn.Module):
-#     def __init__(self, input_size, output_size):
-#         super(MLP, self).__init__()
-#         self.fc = nn.Sequential(
-#         nn.Linear(input_size, 1280),nn.PReLU(),nn.Dropout(),
-#         nn.Linear(1280, 1024),nn.PReLU(),nn.Dropout(),
-#         nn.Linear(1024, 896),nn.PReLU(),nn.Dropout(),
-#         nn.Linear(896, 768),nn.PReLU(),nn.Dropout(),
-#         nn.Linear(768, 512),nn.PReLU(),nn.Dropout(),
-#         nn.Linear(512, 384),nn.PReLU(),nn.Dropout(),
-#         nn.Linear(384, 256),nn.PReLU(), nn.Dropout(),
-#         nn.Linear(256, 256),nn.PReLU(), nn.Dropout(),
-#         nn.Linear(256, 128),nn.PReLU(), nn.Dropout(),
-#         nn.Linear(128, 64),nn.PReLU(), nn.Dropout(),
-#         nn.Linear(64, 32),nn.PReLU(),
-#         nn.Linear(32, output_size))
-
-

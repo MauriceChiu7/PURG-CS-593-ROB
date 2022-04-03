@@ -51,14 +51,13 @@ def main(args):
 
         subtitle = f"Avg Reward with Q-1.{model} Loss Function and {episodes} Episodes ({colors[i]})"
         
-
+        plt.xlabel("Iterations / Epochs")
+        plt.ylabel("Average Rewards")
         plt.plot(x_axis_iter, y_axis_avgRew, color=colors[i], marker='o')
         legends.append(subtitle)
 
     for l in legends:
         plt.figtext(0.1, 0.95-(0.05*legends.index(l)), l)
-
-    plt.figtext(0.1, 0.02, f"Average Rewards", wrap=True)
 
     plt.show()
 
