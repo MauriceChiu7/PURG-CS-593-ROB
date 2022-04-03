@@ -179,7 +179,7 @@ def main(args):
                 if args.verbose: print(f"===> mu:\t\t", mu)
                 # print(f"===> mu:\t\t", mu)
 
-                cov = torch.mul(torch.eye(len(mu)), torch.pi)
+                cov = torch.mul(torch.eye(len(mu)), 1e-2)
                 if args.verbose: print(f"===> cov:\n", cov)
                 # print(f"===> cov:\n", cov)
 
@@ -190,6 +190,7 @@ def main(args):
                 # get a sample from each normal distribution and constuct them as actions to pass to env.step()
                 action = distribution.sample()
                 if args.verbose: print(f"===> action:\t", action)
+                # print(f"===> action:\t", action)
 
                 # action_prob = out[(action)]
                 # if args.verbose: print(f"===> action_prob:\t", action_prob)
@@ -209,7 +210,7 @@ def main(args):
                 next_state, reward, done, info = env.step(action) # obs -> state t+1
                 
                 # exit(0)
-                if args.slow: time.sleep(1./25.)
+                if args.slow: time.sleep(1./50.)
                 
                 # Store the states, actions, new states, and rewards
                 snapshot = (prev_state, action, next_state, reward)
@@ -222,6 +223,7 @@ def main(args):
                 t += 1
 
             if args.verbose: print(f"Episode finished after {t} timesteps.")
+            print(f"Episode finished after {t} timesteps.")
 
             const_return = torch.tensor(0.)
             if args.verbose: print(f"===> const_return:\t", const_return)

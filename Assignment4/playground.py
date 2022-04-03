@@ -12,8 +12,10 @@ env.reset()
 
 p.resetDebugVisualizerCamera(cameraDistance=0.4, cameraYaw=0, cameraPitch=-89, cameraTargetPosition=(0,0,0))
 
+env.reset()
+
 while 1:
-    env.reset()
+    env.step([-0.01, -0.01])
+    # p.stepSimulation()
     time.sleep(1./25.)
-    p.stepSimulation()
     
