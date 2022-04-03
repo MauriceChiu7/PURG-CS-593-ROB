@@ -18,10 +18,15 @@ def main(args):
     # pathName = args.path_file[0].split('/')[-1].split('.')[0]
 
     for i in range(len(args.file_paths)):
+        print(args.file_paths[i])
+        # if args.success_rate:
         model = args.file_paths[i].split('.')[0].split('_')[3]
         episodes = args.file_paths[i].split('.')[0].split('_')[5]
-        # print(model)
-        # print(iterations)
+        epochs = args.file_paths[i].split('.')[0].split('_')[7]
+        # else: 
+        #     model = args.file_paths[i].split('.')[0].split('_')[3]
+        #     episodes = args.file_paths[i].split('.')[0].split('_')[5]
+
         # exit(0)
         file = open(args.file_paths[i])
         csvreader = csv.reader(file)
@@ -48,11 +53,16 @@ def main(args):
         # print(y_axis_avgRew)
         # print(x_axis_iter)
         
-
-        subtitle = f"Avg Reward with Q-1.{model} Loss Function and {episodes} Episodes ({colors[i]})"
+        if args.success_rate: 
+            subtitle = f"Success Rate with Q-1.{model} Loss Function Trained for {epochs} Tested on 100 Episodes ({colors[i]})"
+        else: 
+            subtitle = f"Avg Reward with Q-1.{model} Loss Function and {episodes} Episodes ({colors[i]})"
         
         plt.xlabel("Iterations / Epochs")
-        plt.ylabel("Average Rewards")
+        if args.success_rate: 
+            plt.ylabel("Success Rate")
+        else: 
+            plt.ylabel("Average Rewards")
         plt.plot(x_axis_iter, y_axis_avgRew, color=colors[i], marker='o')
         legends.append(subtitle)
 
@@ -76,6 +86,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CS 593-ROB - Assignment 4')
     parser.add_argument('-f', '--file-paths', nargs='*', type=str, default=[], help='File paths')
+    parser.add_argument('-s', '--success-rate', action='store_true', help='Plots success rates instead of average rewards.')
     
     args = parser.parse_args()
     

@@ -16,8 +16,8 @@ import random
 import torch
 from utility import *
 
-# MAX_ITERATIONS = 200 # Number of updates to your gradient
-# N_EPISODES = 500 # Number of episodes/rollouts
+MAX_ITERATIONS = 1 # Number of updates to your gradient
+N_EPISODES = 1 # Number of episodes/rollouts
 GAMMA = 0.9 # Discounting factor
 
 def loss_f1(const_return, log_probs):
@@ -134,29 +134,18 @@ def main(args):
     load_net_state(policy, os.path.join(model_path, model_name))
 
     print(f"\npolicy.state_dict AFTER load net state:\n{policy.state_dict()}\n")
-
-    # print(f"learning rate: {args.learning_rate}")
-    # policy.parameters() = policy.fc.parameters() They are the same thing!
-    # if torch.cuda.is_available():
-    #     policy.cuda()
-    #     optimizer = torch.optim.Adam(list(policy.fc.parameters()), lr=args.learning_rate)
-    
-    # optimizer = torch.optim.Adam(list(policy.fc.parameters()), lr=args.learning_rate)
-
-    #___Load Previously Trained Model If Start Epoch > 0___ Skipping
-    # if args.start_epoch > 0:
-    #     load_opt_state(policy, os.path.join(args.model_path, model_name))
     
     print("testing...")
     avgRewards = []
     successRates = []
     if args.verbose: print(f"===> avgRewards:\t", avgRewards)
-    for iter in range(1):
+    # for iter in range(args.iterations):
+    for iter in range(MAX_ITERATIONS):
         totalRewards = []
         totalLoss = torch.tensor(0.)
         # print(f"Iteration {iter} of {args.iterations}")
         success = torch.tensor(0.)
-        for e in range(args.episodes):
+        for e in range(N_EPISODES):
             # set seed
             torch_seed = np.random.randint(low=0, high=1000)
             np_seed = np.random.randint(low=0, high=1000)
@@ -165,7 +154,7 @@ def main(args):
             np.random.seed(np_seed)
             random.seed(py_seed)
 
-            if args.verbose: print(f"Episode {e} of {args.episodes}, iteration {iter} of {args.iterations}")
+            if args.verbose: print(f"Episode {e} of {N_EPISODES}, iteration {iter} of {args.iterations}")
             t = 0
             rollout = [] # Trajectory. A list of tuples [(s0, a0, s1, r1), (s1, a1, s2, r2), ..., (sH-1, aH-1, sH, rH)]
             log_probs = [] # the distribution
@@ -177,7 +166,7 @@ def main(args):
             prev_state = env.reset() 
             # print("--^ env.reset() ^--")
 
-            print(f"\npolicy.state_dict at iter {iter}, episode {e}:\n{policy.state_dict()}\n")
+            # print(f"\npolicy.state_dict at iter {iter}, episode {e}:\n{policy.state_dict()}\n")
 
             p.resetDebugVisualizerCamera(cameraDistance=0.4, cameraYaw=0, cameraPitch=-89, cameraTargetPosition=(0,0,0))
             terminate = False
@@ -292,11 +281,11 @@ def main(args):
             # Triple Bam!
         if args.verbose: print(f"===> totalLoss:\t\t", totalLoss)
         
-        successRate = success / args.episodes
+        successRate = success / N_EPISODES
         successRates.append(successRate)
-        print(f"Iter: {iter}: num of successful episodes: {success} over number of episodes: {args.episodes}. Success rate = {successRate}")
+        print(f"Iter: {iter}: num of successful episodes: {success} over number of episodes: {N_EPISODES}. Success rate = {successRate}")
 
-        avgLoss = totalLoss / args.episodes
+        avgLoss = totalLoss / N_EPISODES
         # avgLoss = torch.FloatTensor(avgLoss)
         if args.verbose: print(f"===> avgLoss:\t\t", avgLoss)
         # print("\n\n==================\n\n==================\n\n==================\n\n")
@@ -304,7 +293,7 @@ def main(args):
         sumTotalRewards = 0
         for tr in totalRewards:
             sumTotalRewards += tr
-        avgReward = sumTotalRewards / args.episodes
+        avgReward = sumTotalRewards / N_EPISODES
         avgRewards.append(avgReward)
 
         # if (iter+1) % 10 == 0:
@@ -321,17 +310,17 @@ def main(args):
 
         print(f"Iter: {iter},\tavgLoss: {avgLoss},\tavgReward: {avgReward}")
 
-    avgRewardFileName = f"reacherTestSuccess_rate_model_{args.model}_episodes_{args.episodes}.csv"
-    with open(avgRewardFileName, 'w') as csvfile:
+    successRateFileName = f"reacherTestSuccess_rate_model_{args.model}_episodes_{args.episodes}_epochs_{args.iterations}.csv"
+    with open(successRateFileName, 'w') as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(avgRewards)
-    if args.verbose: print(f"\n...average rewards wrote to file: {avgRewardFileName}\n")
+        csvwriter.writerow(successRates)
+    print(f"\n...success rates wrote to file: {successRateFileName}\n")
 
-    avgRewardFileName = f"reacherTestAverage_reward_model_{args.model}_episodes_{args.episodes}.csv"
+    avgRewardFileName = f"reacherTestAverage_reward_model_{args.model}_episodes_{args.episodes}_epochs_{args.iterations}.csv"
     with open(avgRewardFileName, 'w') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(avgRewards)
-    if args.verbose: print(f"\n...average rewards wrote to file: {avgRewardFileName}\n")
+    print(f"\n...average rewards wrote to file: {avgRewardFileName}\n")
 
     env.close()
 
@@ -341,7 +330,6 @@ if __name__ == "__main__":
         help='Enter 1 for question 1, part 1. Enter 2 for question 1 part 2. Enter 3 for question 1, part 3')
     parser.add_argument('-i', '--iterations', default=200, type=int, help='Number of iterations/epochs.')
     parser.add_argument('-e', '--episodes', default=500, type=int, help='Number of episodes to execute.')
-    parser.add_argument('-l', '--learning-rate', default=0.01, type=float, help='Learning rate.')
     parser.add_argument('-r', '--random-start', action='store_true', help='Print logs.')
     parser.add_argument('-f', '--fast', action='store_true', help='Set to disable live animation.')
     parser.add_argument('-s', '--slow', action='store_true', help='Play live animation in slow motion.')
