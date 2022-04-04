@@ -129,11 +129,11 @@ def main(args):
     if not os.path.exists(model_path):
         os.makedirs(model_path)
 
-    print(f"\npolicy.state_dict BEFORE load net state:\n{policy.state_dict()}\n")
+    # print(f"\npolicy.state_dict BEFORE load net state:\n{policy.state_dict()}\n")
 
     load_net_state(policy, os.path.join(model_path, model_name))
 
-    print(f"\npolicy.state_dict AFTER load net state:\n{policy.state_dict()}\n")
+    # print(f"\npolicy.state_dict AFTER load net state:\n{policy.state_dict()}\n")
     
     print("testing...")
     avgRewards = []

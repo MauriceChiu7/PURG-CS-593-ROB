@@ -241,7 +241,7 @@ def main(args):
         avgRewards.append(avgReward)
 
         if (iter+1) % 10 == 0:
-            model_name = f"cartpole_q_{args.model}_episode_{args.episodes}_epoch_{iter}.pkl"
+            model_name = f"cartpole_q_{args.model}_episode_{args.episodes}_epoch_{iter+1}.pkl"
             save_state(policy, optimizer, os.path.join(model_path, model_name))
         
         optimizer.zero_grad()
