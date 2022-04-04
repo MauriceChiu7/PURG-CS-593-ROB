@@ -26,7 +26,7 @@ def loss_f1(const_return, log_probs):
     # if args.verbose: print(f"===> log_probs[0]:\t", log_probs[0])
 
     # print("\nCalculating loss with function 1\n")
-    loss = -1 * torch.sum(
+    loss = 1 * torch.sum(
             torch.mul(
                 log_probs, 
                 const_return
@@ -40,7 +40,7 @@ def loss_f2(args, returns, log_probs):
     loss = 0
     if args.model == '2':
         # print("\nCalculating loss with function 2\n")
-        loss = -1 * torch.sum(
+        loss = 1 * torch.sum(
                 torch.mul(
                     log_probs,
                     returns
@@ -52,7 +52,7 @@ def loss_f2(args, returns, log_probs):
         if args.verbose: print(f"===> baseline:\t\t", baseline)
         sigma = torch.std(returns)
         if args.verbose: print(f"===> sigma:\t\t", sigma)
-        loss = -1 * torch.sum(
+        loss = 1 * torch.sum(
                 torch.mul(
                     log_probs, 
                     torch.div(
@@ -179,7 +179,7 @@ def main(args):
                 if args.verbose: print(f"===> mu:\t\t", mu)
                 # print(f"===> mu:\t\t", mu)
 
-                cov = torch.mul(torch.eye(len(mu)), 1)
+                cov = torch.mul(torch.eye(len(mu)), 1e-2)
                 if args.verbose: print(f"===> cov:\n", cov)
                 # print(f"===> cov:\n", cov)
 
